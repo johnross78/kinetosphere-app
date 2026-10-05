@@ -1,8 +1,8 @@
 {
   "name": "kinetosphere-mobile",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "private": true,
-  "description": "Kinetosphere iOS RC31: preserves RC29/RC30 visual baseline while replacing iPhone-landscape YouTube crop compensation with a clean hosted-bridge lifecycle reset after orientation/viewport settling; synchronized with web v6.10.37.",
+  "description": "Kinetosphere iOS RC32: preserves the RC29 Player baseline, retires the RC31 rotation reload, and uses the native iPhone landscape safe-area insets to eliminate the residual hosted-YouTube gutter without affecting iPad; synchronized with web v6.10.38.",
   "scripts": {
     "postinstall": "node scripts/apply-player-layout.mjs",
     "cap:sync": "npx cap sync",
