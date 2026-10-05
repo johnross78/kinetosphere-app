@@ -112,3 +112,10 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - RC31 CSS then restores the bridge iframe to a clean 100% × 100% fill with no transform.
 - The runtime is explicitly excluded from native iPad shells and does not alter portrait iPhone, Cloudflare Stream, offline media, Player controls, anatomy layout, ribbon layout, or circuit-hydration behavior.
 
+## RC32 / v6.10.38 — iPhone landscape safe-area YouTube correction
+- RC29 remains the Player/layout baseline; iPad behavior remains unchanged.
+- RC31's iPhone rotation/bridge-reload runtime is no longer injected.
+- The hosted YouTube frame now uses the actual iOS landscape safe-area insets reported by the device instead of fixed percentage crop/scale values.
+- Left and right safe-area insets are handled independently so either landscape orientation is supported.
+- Portrait iPhone, iPad, Cloudflare Stream, offline media, Player controls, anatomy layout, ribbon layout, timers, and circuit-hydration behavior are unchanged.
+
