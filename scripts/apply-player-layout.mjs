@@ -38,6 +38,12 @@ const patches = [
     start: '/* >>> RC31 PLAYER LAYOUT OVERRIDES >>> */',
     end: '/* <<< RC31 PLAYER LAYOUT OVERRIDES <<< */',
   },
+  {
+    name: 'RC32',
+    file: path.join(root, 'www', 'rc32-player-layout.css'),
+    start: '/* >>> RC32 PLAYER LAYOUT OVERRIDES >>> */',
+    end: '/* <<< RC32 PLAYER LAYOUT OVERRIDES <<< */',
+  },
 ];
 
 if (!fs.existsSync(mobileShell)) {
@@ -69,9 +75,9 @@ fs.writeFileSync(mobileShell, shell);
 
 if (fs.existsSync(indexFile)) {
   let html = fs.readFileSync(indexFile, 'utf8');
-  for (const prior of ['6.10.32','6.10.33','6.10.34','6.10.35','6.10.36']) {
-    html = html.replaceAll('v'+prior, 'v6.10.37');
-    html = html.replaceAll(prior, '6.10.37');
+  for (const prior of ['6.10.32','6.10.33','6.10.34','6.10.35','6.10.36','6.10.37']) {
+    html = html.replaceAll('v'+prior, 'v6.10.38');
+    html = html.replaceAll(prior, '6.10.38');
   }
 
   const runtimeTag = '<script src="rc29-player-runtime.js"></script>';
@@ -81,11 +87,8 @@ if (fs.existsSync(indexFile)) {
   if (fs.existsSync(rc29RuntimeFile)) {
     html = html.replace('</body>', `${runtimeTag}\n</body>`);
   }
-  if (fs.existsSync(rc31RuntimeFile)) {
-    html = html.replace('</body>', `${rc31RuntimeTag}\n</body>`);
-  }
 
   fs.writeFileSync(indexFile, html);
 }
 
-console.log('Applied Kinetosphere RC27/RC28/RC29 baseline plus RC31 / v6.10.37 iPhone landscape hosted-YouTube lifecycle correction.');
+console.log('Applied Kinetosphere RC27/RC28/RC29 baseline plus RC32 / v6.10.38 iPhone landscape safe-area YouTube correction.');
