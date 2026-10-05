@@ -105,3 +105,10 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - The residual left black gutter is cropped after render while preserving the bridge at the correct 16:9 stage size.
 - Portrait iPhone, iPad, Cloudflare-hosted media, offline media, Player controls, anatomy layout, ribbon layout, and circuit-hydration logic are unchanged.
 
+## RC31 / v6.10.37 — sustainable iPhone landscape YouTube lifecycle fix
+- RC29 remains the Player/layout baseline and iPad behavior is unchanged.
+- Removes reliance on phone-landscape crop/scale compensation as the primary fix.
+- Native iPhone landscape recreates the hosted HTTPS YouTube bridge only after the orientation/visual viewport has settled, forcing YouTube to initialize against the final landscape dimensions.
+- RC31 CSS then restores the bridge iframe to a clean 100% × 100% fill with no transform.
+- The runtime is explicitly excluded from native iPad shells and does not alter portrait iPhone, Cloudflare Stream, offline media, Player controls, anatomy layout, ribbon layout, or circuit-hydration behavior.
+
