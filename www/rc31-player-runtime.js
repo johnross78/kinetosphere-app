@@ -78,7 +78,7 @@
   const host=document.getElementById("ytFrame");
   if(host && "ResizeObserver" in window){
     const observer=new ResizeObserver(()=>{
-      if(isNativePhoneLandscapePlayer() && hostedYoutubeFrame?.()) scheduleRefresh();
+      if(isNativePhoneLandscapePlayer() && typeof hostedYoutubeFrame==='function' && hostedYoutubeFrame()) scheduleRefresh();
     });
     observer.observe(host);
   }
