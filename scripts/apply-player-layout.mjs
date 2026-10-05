@@ -5,6 +5,7 @@ const root = process.cwd();
 const mobileShell = path.join(root, 'www', 'mobile-shell.css');
 const indexFile = path.join(root, 'www', 'index.html');
 const rc29RuntimeFile = path.join(root, 'www', 'rc29-player-runtime.js');
+const rc31RuntimeFile = path.join(root, 'www', 'rc31-player-runtime.js');
 
 const patches = [
   {
@@ -30,6 +31,12 @@ const patches = [
     file: path.join(root, 'www', 'rc30-player-layout.css'),
     start: '/* >>> RC30 PLAYER LAYOUT OVERRIDES >>> */',
     end: '/* <<< RC30 PLAYER LAYOUT OVERRIDES <<< */',
+  },
+  {
+    name: 'RC31',
+    file: path.join(root, 'www', 'rc31-player-layout.css'),
+    start: '/* >>> RC31 PLAYER LAYOUT OVERRIDES >>> */',
+    end: '/* <<< RC31 PLAYER LAYOUT OVERRIDES <<< */',
   },
 ];
 
@@ -62,20 +69,25 @@ fs.writeFileSync(mobileShell, shell);
 
 if (fs.existsSync(indexFile)) {
   let html = fs.readFileSync(indexFile, 'utf8');
-  html = html.replaceAll('v6.10.32', 'v6.10.36');
-  html = html.replaceAll('6.10.32', '6.10.36');
-  html = html.replaceAll('v6.10.33', 'v6.10.36');
-  html = html.replaceAll('6.10.33', '6.10.36');
-  html = html.replaceAll('v6.10.34', 'v6.10.36');
-  html = html.replaceAll('6.10.34', '6.10.36');
+  html = html.replaceAll('v6.10.37', 'v6.10.37');
+  html = html.replaceAll('6.10.37', '6.10.37');
+  html = html.replaceAll('v6.10.37', 'v6.10.37');
+  html = html.replaceAll('6.10.37', '6.10.37');
+  html = html.replaceAll('v6.10.37', 'v6.10.37');
+  html = html.replaceAll('6.10.37', '6.10.37');
 
   const runtimeTag = '<script src="rc29-player-runtime.js"></script>';
+  const rc31RuntimeTag = '<script src="rc31-player-runtime.js"></script>';
   html = html.replaceAll(runtimeTag, '');
+  html = html.replaceAll(rc31RuntimeTag, '');
   if (fs.existsSync(rc29RuntimeFile)) {
     html = html.replace('</body>', `${runtimeTag}\n</body>`);
+  }
+  if (fs.existsSync(rc31RuntimeFile)) {
+    html = html.replace('</body>', `${rc31RuntimeTag}\n</body>`);
   }
 
   fs.writeFileSync(indexFile, html);
 }
 
-console.log('Applied Kinetosphere RC27/RC28/RC29 baseline plus RC30 / v6.10.36 iPhone landscape YouTube correction.');
+console.log('Applied Kinetosphere RC27/RC28/RC29 baseline plus RC31 / v6.10.37 iPhone landscape hosted-YouTube lifecycle correction.');
