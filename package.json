@@ -1,8 +1,8 @@
 {
   "name": "kinetosphere-mobile",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "private": true,
-  "description": "Kinetosphere iOS RC30: preserves RC29 and applies a phone-landscape-only hosted YouTube crop/scale correction to eliminate the residual left video gutter; synchronized with web v6.10.36.",
+  "description": "Kinetosphere iOS RC31: preserves RC29/RC30 visual baseline while replacing iPhone-landscape YouTube crop compensation with a clean hosted-bridge lifecycle reset after orientation/viewport settling; synchronized with web v6.10.37.",
   "scripts": {
     "postinstall": "node scripts/apply-player-layout.mjs",
     "cap:sync": "npx cap sync",
