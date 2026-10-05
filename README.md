@@ -99,3 +99,9 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - Player prescription text now shrinks only as needed to fit its available box, including long empty-state/help messages.
 - Locally launched/randomized circuits are persisted immediately and protected from a background cloud-sync race that could temporarily replace the active Player circuit with an older/empty cloud setting.
 
+## RC30 / v6.10.36 — iPhone landscape YouTube edge cleanup
+- RC29 remains the full Player baseline.
+- This release changes only the native iPhone-landscape hosted YouTube frame.
+- The residual left black gutter is cropped after render while preserving the bridge at the correct 16:9 stage size.
+- Portrait iPhone, iPad, Cloudflare-hosted media, offline media, Player controls, anatomy layout, ribbon layout, and circuit-hydration logic are unchanged.
+
