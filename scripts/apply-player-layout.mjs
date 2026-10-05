@@ -69,12 +69,10 @@ fs.writeFileSync(mobileShell, shell);
 
 if (fs.existsSync(indexFile)) {
   let html = fs.readFileSync(indexFile, 'utf8');
-  html = html.replaceAll('v6.10.37', 'v6.10.37');
-  html = html.replaceAll('6.10.37', '6.10.37');
-  html = html.replaceAll('v6.10.37', 'v6.10.37');
-  html = html.replaceAll('6.10.37', '6.10.37');
-  html = html.replaceAll('v6.10.37', 'v6.10.37');
-  html = html.replaceAll('6.10.37', '6.10.37');
+  for (const prior of ['6.10.32','6.10.33','6.10.34','6.10.35','6.10.36']) {
+    html = html.replaceAll('v'+prior, 'v6.10.37');
+    html = html.replaceAll(prior, '6.10.37');
+  }
 
   const runtimeTag = '<script src="rc29-player-runtime.js"></script>';
   const rc31RuntimeTag = '<script src="rc31-player-runtime.js"></script>';
