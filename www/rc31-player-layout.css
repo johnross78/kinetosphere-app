@@ -1,0 +1,24 @@
+/* RC31 / v6.10.37 — clean iPhone-landscape hosted-YouTube lifecycle fix.
+   Remove RC29/RC30 crop/scale compensation. The runtime now recreates the
+   hosted bridge after the landscape viewport settles so YouTube initializes
+   against the real native viewport. */
+@media (orientation:landscape) and (max-width:950px) and (max-height:600px){
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView #ytFrame{
+    overflow:hidden!important;
+  }
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView #ytFrame>iframe,
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView #ytFrame>iframe[data-kinetosphere-youtube-bridge]{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    min-width:100%!important;
+    max-width:100%!important;
+    height:100%!important;
+    min-height:100%!important;
+    max-height:100%!important;
+    margin:0!important;
+    padding:0!important;
+    transform:none!important;
+    transform-origin:center center!important;
+  }
+}
