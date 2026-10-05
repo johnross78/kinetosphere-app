@@ -11,7 +11,7 @@
     position:absolute!important;
     top:0!important;
     bottom:0!important;
-    left:calc(-1 * env(safe-area-inset-left))!important;
+    left:calc(0px - env(safe-area-inset-left))!important;
     right:auto!important;
     width:calc(100% + env(safe-area-inset-left))!important;
     min-width:calc(100% + env(safe-area-inset-left))!important;
