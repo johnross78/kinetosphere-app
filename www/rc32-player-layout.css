@@ -1,0 +1,26 @@
+/* RC32 / v6.10.38 — iPhone landscape hosted-YouTube safe-area correction.
+   The residual left gutter matches the native landscape safe-area inset. Use the
+   device-reported inset instead of percentage crop guesses. iPad is excluded. */
+@media (orientation:landscape) and (max-width:950px) and (max-height:600px){
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView #ytFrame{
+    overflow:hidden!important;
+  }
+
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView #ytFrame>iframe,
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView #ytFrame>iframe[data-kinetosphere-youtube-bridge]{
+    position:absolute!important;
+    top:0!important;
+    bottom:0!important;
+    left:calc(-1 * env(safe-area-inset-left))!important;
+    right:auto!important;
+    width:calc(100% + env(safe-area-inset-left))!important;
+    min-width:calc(100% + env(safe-area-inset-left))!important;
+    max-width:none!important;
+    height:100%!important;
+    min-height:100%!important;
+    margin:0!important;
+    padding:0!important;
+    transform:none!important;
+    transform-origin:left center!important;
+  }
+}
