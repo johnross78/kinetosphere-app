@@ -1,0 +1,63 @@
+/* RC38 / v6.10.44 — iPhone landscape info-card reflow.
+   RC37 viewport containment remains authoritative. */
+@media (orientation:landscape) and (max-width:950px) and (max-height:600px){
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .info-card{
+    min-width:0!important;
+  }
+
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .muscle-map-title{
+    min-width:0!important;
+    align-items:flex-start!important;
+  }
+
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .muscle-map-title strong,
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView #muscleMapText{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView #muscleMapText{
+    display:block!important;
+    width:100%!important;
+    text-align:left!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    word-break:break-word!important;
+    font-size:10px!important;
+    line-height:1.05!important;
+  }
+
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .rapid-muscle-image-wrap,
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .info-card.timed-mode .rapid-muscle-image-wrap{
+    min-width:0!important;
+    min-height:56px!important;
+    height:56px!important;
+    max-height:56px!important;
+  }
+
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .rapid-muscle-image-wrap img{
+    width:100%!important;
+    height:100%!important;
+    max-width:100%!important;
+    max-height:100%!important;
+    object-fit:contain!important;
+  }
+
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .prescription-timer-row{
+    min-width:0!important;
+    width:100%!important;
+    overflow:hidden!important;
+    padding:0 3px!important;
+  }
+
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .prescription-timer-row .timer{
+    min-width:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:clip!important;
+  }
+}
