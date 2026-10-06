@@ -26,6 +26,12 @@ const patches = [
     start: '/* >>> RC29 PLAYER LAYOUT OVERRIDES >>> */',
     end: '/* <<< RC29 PLAYER LAYOUT OVERRIDES <<< */',
   },
+  {
+    name: 'RC37',
+    file: path.join(root, 'www', 'rc37-player-layout.css'),
+    start: '/* >>> RC37 PLAYER LAYOUT OVERRIDES >>> */',
+    end: '/* <<< RC37 PLAYER LAYOUT OVERRIDES <<< */',
+  },
 ]
 
 if (!fs.existsSync(mobileShell)) {
@@ -66,28 +72,24 @@ fs.writeFileSync(mobileShell, shell);
 
 if (fs.existsSync(indexFile)) {
   let html = fs.readFileSync(indexFile, 'utf8');
-  for (const prior of ['6.10.32','6.10.33','6.10.34','6.10.35','6.10.36','6.10.37','6.10.38','6.10.39','6.10.40','6.10.41']) {
-    html = html.replaceAll('v'+prior, 'v6.10.42');
-    html = html.replaceAll(prior, '6.10.42');
+  for (const prior of ['6.10.32','6.10.33','6.10.34','6.10.35','6.10.36','6.10.37','6.10.38','6.10.39','6.10.40','6.10.41','6.10.42']) {
+    html = html.replaceAll('v'+prior, 'v6.10.43');
+    html = html.replaceAll(prior, '6.10.43');
   }
 
   const runtimeTag = '<script src="rc29-player-runtime.js"></script>';
-  const rc36DiagTag = '<script src="rc36-viewport-diagnostic.js"></script>';
   for (const stale of [
     '<script src="rc31-player-runtime.js"></script>',
     '<script src="rc33-player-runtime.js"></script>',
     '<script src="rc34-player-runtime.js"></script>',
-    rc36DiagTag
+    '<script src="rc36-viewport-diagnostic.js"></script>'
   ]) html = html.replaceAll(stale, '');
   html = html.replaceAll(runtimeTag, '');
   if (fs.existsSync(rc29RuntimeFile)) {
     html = html.replace('</body>', `${runtimeTag}\n</body>`);
   }
-  if (fs.existsSync(rc36DiagFile)) {
-    html = html.replace('</body>', `${rc36DiagTag}\n</body>`);
-  }
 
   fs.writeFileSync(indexFile, html);
 }
 
-console.log('Applied Kinetosphere RC36 diagnostic build / v6.10.42 on RC29 stable Player baseline; no layout changes.');
+console.log('Applied Kinetosphere RC37 / v6.10.43 intrinsic-width containment on RC29 stable Player baseline; diagnostics removed.');
