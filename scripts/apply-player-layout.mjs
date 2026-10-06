@@ -5,9 +5,6 @@ const root = process.cwd();
 const mobileShell = path.join(root, 'www', 'mobile-shell.css');
 const indexFile = path.join(root, 'www', 'index.html');
 const rc29RuntimeFile = path.join(root, 'www', 'rc29-player-runtime.js');
-const rc31RuntimeFile = path.join(root, 'www', 'rc31-player-runtime.js');
-const rc33RuntimeFile = path.join(root, 'www', 'rc33-player-runtime.js');
-const rc34RuntimeFile = path.join(root, 'www', 'rc34-player-runtime.js');
 
 const patches = [
   {
@@ -28,31 +25,7 @@ const patches = [
     start: '/* >>> RC29 PLAYER LAYOUT OVERRIDES >>> */',
     end: '/* <<< RC29 PLAYER LAYOUT OVERRIDES <<< */',
   },
-  {
-    name: 'RC30',
-    file: path.join(root, 'www', 'rc30-player-layout.css'),
-    start: '/* >>> RC30 PLAYER LAYOUT OVERRIDES >>> */',
-    end: '/* <<< RC30 PLAYER LAYOUT OVERRIDES <<< */',
-  },
-  {
-    name: 'RC31',
-    file: path.join(root, 'www', 'rc31-player-layout.css'),
-    start: '/* >>> RC31 PLAYER LAYOUT OVERRIDES >>> */',
-    end: '/* <<< RC31 PLAYER LAYOUT OVERRIDES <<< */',
-  },
-  {
-    name: 'RC32',
-    file: path.join(root, 'www', 'rc32-player-layout.css'),
-    start: '/* >>> RC32 PLAYER LAYOUT OVERRIDES >>> */',
-    end: '/* <<< RC32 PLAYER LAYOUT OVERRIDES <<< */',
-  },
-  {
-    name: 'RC33',
-    file: path.join(root, 'www', 'rc33-player-layout.css'),
-    start: '/* >>> RC33 PLAYER LAYOUT OVERRIDES >>> */',
-    end: '/* <<< RC33 PLAYER LAYOUT OVERRIDES <<< */',
-  },
-];
+]
 
 if (!fs.existsSync(mobileShell)) {
   console.log('Player layout patch skipped: www/mobile-shell.css is not present.');
@@ -83,27 +56,23 @@ fs.writeFileSync(mobileShell, shell);
 
 if (fs.existsSync(indexFile)) {
   let html = fs.readFileSync(indexFile, 'utf8');
-  for (const prior of ['6.10.32','6.10.33','6.10.34','6.10.35','6.10.36','6.10.37','6.10.38','6.10.39']) {
-    html = html.replaceAll('v'+prior, 'v6.10.40');
-    html = html.replaceAll(prior, '6.10.40');
+  for (const prior of ['6.10.32','6.10.33','6.10.34','6.10.35','6.10.36','6.10.37','6.10.38','6.10.39','6.10.40']) {
+    html = html.replaceAll('v'+prior, 'v6.10.41');
+    html = html.replaceAll(prior, '6.10.41');
   }
 
   const runtimeTag = '<script src="rc29-player-runtime.js"></script>';
-  const rc31RuntimeTag = '<script src="rc31-player-runtime.js"></script>';
-  const rc33RuntimeTag = '<script src="rc33-player-runtime.js"></script>';
-  const rc34RuntimeTag = '<script src="rc34-player-runtime.js"></script>';
+  for (const stale of [
+    '<script src="rc31-player-runtime.js"></script>',
+    '<script src="rc33-player-runtime.js"></script>',
+    '<script src="rc34-player-runtime.js"></script>'
+  ]) html = html.replaceAll(stale, '');
   html = html.replaceAll(runtimeTag, '');
-  html = html.replaceAll(rc31RuntimeTag, '');
-  html = html.replaceAll(rc33RuntimeTag, '');
-  html = html.replaceAll(rc34RuntimeTag, '');
   if (fs.existsSync(rc29RuntimeFile)) {
     html = html.replace('</body>', `${runtimeTag}\n</body>`);
-  }
-  if (fs.existsSync(rc34RuntimeFile)) {
-    html = html.replace('</body>', `${rc34RuntimeTag}\n</body>`);
   }
 
   fs.writeFileSync(indexFile, html);
 }
 
-console.log('Applied Kinetosphere RC27/RC28/RC29 baseline plus RC34 / v6.10.40 native iPhone rotation stabilization.');
+console.log('Applied Kinetosphere RC29 stable Player baseline / v6.10.41; RC30-RC34 experiments retired from build.');
