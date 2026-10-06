@@ -6,6 +6,7 @@ const mobileShell = path.join(root, 'www', 'mobile-shell.css');
 const indexFile = path.join(root, 'www', 'index.html');
 const rc29RuntimeFile = path.join(root, 'www', 'rc29-player-runtime.js');
 const rc31RuntimeFile = path.join(root, 'www', 'rc31-player-runtime.js');
+const rc33RuntimeFile = path.join(root, 'www', 'rc33-player-runtime.js');
 
 const patches = [
   {
@@ -44,6 +45,12 @@ const patches = [
     start: '/* >>> RC32 PLAYER LAYOUT OVERRIDES >>> */',
     end: '/* <<< RC32 PLAYER LAYOUT OVERRIDES <<< */',
   },
+  {
+    name: 'RC33',
+    file: path.join(root, 'www', 'rc33-player-layout.css'),
+    start: '/* >>> RC33 PLAYER LAYOUT OVERRIDES >>> */',
+    end: '/* <<< RC33 PLAYER LAYOUT OVERRIDES <<< */',
+  },
 ];
 
 if (!fs.existsSync(mobileShell)) {
@@ -75,20 +82,25 @@ fs.writeFileSync(mobileShell, shell);
 
 if (fs.existsSync(indexFile)) {
   let html = fs.readFileSync(indexFile, 'utf8');
-  for (const prior of ['6.10.32','6.10.33','6.10.34','6.10.35','6.10.36','6.10.37']) {
-    html = html.replaceAll('v'+prior, 'v6.10.38');
-    html = html.replaceAll(prior, '6.10.38');
+  for (const prior of ['6.10.32','6.10.33','6.10.34','6.10.35','6.10.36','6.10.37','6.10.38']) {
+    html = html.replaceAll('v'+prior, 'v6.10.39');
+    html = html.replaceAll(prior, '6.10.39');
   }
 
   const runtimeTag = '<script src="rc29-player-runtime.js"></script>';
   const rc31RuntimeTag = '<script src="rc31-player-runtime.js"></script>';
+  const rc33RuntimeTag = '<script src="rc33-player-runtime.js"></script>';
   html = html.replaceAll(runtimeTag, '');
   html = html.replaceAll(rc31RuntimeTag, '');
+  html = html.replaceAll(rc33RuntimeTag, '');
   if (fs.existsSync(rc29RuntimeFile)) {
     html = html.replace('</body>', `${runtimeTag}\n</body>`);
+  }
+  if (fs.existsSync(rc33RuntimeFile)) {
+    html = html.replace('</body>', `${rc33RuntimeTag}\n</body>`);
   }
 
   fs.writeFileSync(indexFile, html);
 }
 
-console.log('Applied Kinetosphere RC27/RC28/RC29 baseline plus RC32 / v6.10.38 iPhone landscape safe-area YouTube correction.');
+console.log('Applied Kinetosphere RC27/RC28/RC29 baseline plus RC33 / v6.10.39 iPhone viewport stabilization and clean hosted-YouTube geometry.');
