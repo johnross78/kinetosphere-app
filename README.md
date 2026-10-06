@@ -146,3 +146,10 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - iPad behavior remains unchanged.
 - The remaining left black strip is treated as a separate hosted-YouTube bridge-source issue rather than a Player geometry problem.
 
+## RC36 / v6.10.42 — diagnostic-only iPhone rotation build
+- No Player geometry changes from the RC29/RC35 stable baseline.
+- Adds an iPhone-only on-screen diagnostic overlay showing orientation, innerWidth/innerHeight, visualViewport width/height/scale/offset, document/client sizes, app/player/workout-shell sizes, DPR, screen size, and safe-area insets.
+- Captures multiple samples for several seconds after orientation changes so the stale first-landscape state can be compared against the later corrected state.
+- iPad is excluded.
+- This build is intended to identify the exact stale dimension/scale before any further layout or native changes.
+
