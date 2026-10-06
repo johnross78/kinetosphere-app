@@ -68,13 +68,44 @@ function bridgeSize(){
  const host=document.getElementById('player');
  if(!host)return {width:0,height:0};
  const r=host.getBoundingClientRect();
- return {width:Math.max(0,Math.round(r.width)),height:Math.max(0,Math.round(r.height))};
+ return {width:Math.max(0,r.width),height:Math.max(0,r.height)};
 }
 function syncPlayerSize(){
  try{
   if(!player||!player.setSize)return;
   const s=bridgeSize();
-  if(s.width>0&&s.height>0) player.setSize(s.width,s.height);
+  if(!(s.width>0&&s.height>0))return;
+
+  const targetRatio=16/9;
+  const boxRatio=s.width/s.height;
+  let width=s.width;
+  let height=s.height;
+
+  if(boxRatio>targetRatio){
+    width=s.width;
+    height=s.width/targetRatio;
+  }else{
+    height=s.height;
+    width=s.height*targetRatio;
+  }
+
+  player.setSize(Math.ceil(width),Math.ceil(height));
+
+  const iframe=player.getIframe&&player.getIframe();
+  if(iframe){
+    iframe.style.position='absolute';
+    iframe.style.width=Math.ceil(width)+'px';
+    iframe.style.height=Math.ceil(height)+'px';
+    iframe.style.maxWidth='none';
+    iframe.style.maxHeight='none';
+    iframe.style.left=((s.width-width)/2)+'px';
+    iframe.style.top=((s.height-height)/2)+'px';
+    iframe.style.right='auto';
+    iframe.style.bottom='auto';
+    iframe.style.margin='0';
+    iframe.style.padding='0';
+    iframe.style.border='0';
+  }
  }catch(_){}
 }
 let resizeTimer=0;
@@ -106,7 +137,7 @@ window.addEventListener('message',function(ev){
   return new Response(html, {
     status:200,
     headers:{
-      "X-Kinetosphere-YouTube-Bridge":"2026-10-06-v2",
+      "X-Kinetosphere-YouTube-Bridge":"2026-10-06-v3",
       "Content-Type":"text/html; charset=utf-8",
       "Cache-Control":"no-store",
       "Referrer-Policy":"strict-origin-when-cross-origin",
@@ -136,8 +167,8 @@ export default {
 
     if (url.pathname === "/api/bridge-version") {
       return json({
-        youtubeBridge:"2026-10-06-v2",
-        sizing:"container-rect-resize-observer",
+        youtubeBridge:"2026-10-06-v3",
+        sizing:"container-cover-resize-observer",
         webBaseline:"v6.10.32-compatible"
       },200,{"Cache-Control":"no-store"});
     }
