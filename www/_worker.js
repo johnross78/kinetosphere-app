@@ -44,10 +44,10 @@ function youtubeEmbedPage(requestUrl) {
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <style>
-html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden;position:relative}
+html,body{margin:0;padding:0;width:100%;height:100%;background:#ff00ff;overflow:hidden;position:relative}
 body{min-width:0;min-height:0}
-#player{position:absolute!important;inset:0!important;margin:0!important;padding:0!important;width:100%!important;height:100%!important;overflow:hidden!important;background:#000}
-#player iframe{position:absolute!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;margin:0!important;padding:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;border:0!important;display:block!important;background:#000!important}
+#player{position:absolute!important;inset:0!important;margin:0!important;padding:0!important;width:100%!important;height:100%!important;overflow:hidden!important;background:#ff00ff}
+#player iframe{position:absolute!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;margin:0!important;padding:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;border:0!important;display:block!important;background:#00ffff!important}
 </style></head>
 <body><div id="player"></div>
 <script src="https://www.youtube.com/iframe_api"></script>
@@ -137,7 +137,7 @@ window.addEventListener('message',function(ev){
   return new Response(html, {
     status:200,
     headers:{
-      "X-Kinetosphere-YouTube-Bridge":"2026-10-06-v3",
+      "X-Kinetosphere-YouTube-Bridge":"2026-10-06-v4-diag",
       "Content-Type":"text/html; charset=utf-8",
       "Cache-Control":"no-store",
       "Referrer-Policy":"strict-origin-when-cross-origin",
@@ -167,8 +167,8 @@ export default {
 
     if (url.pathname === "/api/bridge-version") {
       return json({
-        youtubeBridge:"2026-10-06-v3",
-        sizing:"container-cover-resize-observer",
+        youtubeBridge:"2026-10-06-v4-diag",
+        sizing:"diagnostic-bridge-vs-youtube-surface",
         webBaseline:"v6.10.32-compatible"
       },200,{"Cache-Control":"no-store"});
     }
