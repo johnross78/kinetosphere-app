@@ -153,3 +153,11 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - iPad is excluded.
 - This build is intended to identify the exact stale dimension/scale before any further layout or native changes.
 
+## RC37 / v6.10.43 — iPhone landscape overflow root-cause fix
+- RC36 diagnostics identified the bad first-landscape state as horizontal page overflow, not a stale native viewport: the visual viewport was correct at roughly 874×402 / scale 1 while the page/app expanded to roughly 1040px wide.
+- WKWebView later auto-scaled that oversized page down, which only appeared to be a delayed viewport correction.
+- RC37 removes the RC36 diagnostic overlay.
+- iPhone landscape now forces the app/header/Player rows to remain shrinkable and within the true viewport, including border-box sizing for safe-area padding and min-width containment for header navigation and Player children.
+- RC29 remains the Player layout baseline; iPad remains unchanged.
+- The residual left black strip remains a separate hosted-YouTube bridge issue.
+
