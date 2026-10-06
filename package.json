@@ -1,8 +1,8 @@
 {
   "name": "kinetosphere-mobile",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "private": true,
-  "description": "Kinetosphere iOS RC35: restores the RC29 stable Player baseline, removes RC30-RC34 rotation/crop experiments from the build, purges their stale CSS/runtime injections, and lets UIKit/WKWebView retain the correct first landscape geometry without post-rotation zoom/inset normalization; synchronized with web v6.10.41.",
+  "description": "Kinetosphere iOS RC36 diagnostic build: preserves the RC29 stable Player baseline with no layout changes and adds an iPhone-only on-screen viewport/orientation diagnostic overlay to measure the first-landscape WKWebView failure; synchronized with web v6.10.42.",
   "scripts": {
     "postinstall": "node scripts/apply-player-layout.mjs",
     "cap:sync": "npx cap sync",
