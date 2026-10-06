@@ -106,6 +106,7 @@ window.addEventListener('message',function(ev){
   return new Response(html, {
     status:200,
     headers:{
+      "X-Kinetosphere-YouTube-Bridge":"2026-10-06-v2",
       "Content-Type":"text/html; charset=utf-8",
       "Cache-Control":"no-store",
       "Referrer-Policy":"strict-origin-when-cross-origin",
@@ -131,6 +132,14 @@ export default {
 
     if (url.pathname === "/embed/youtube") {
       return youtubeEmbedPage(request.url);
+    }
+
+    if (url.pathname === "/api/bridge-version") {
+      return json({
+        youtubeBridge:"2026-10-06-v2",
+        sizing:"container-rect-resize-observer",
+        webBaseline:"v6.10.32-compatible"
+      },200,{"Cache-Control":"no-store"});
     }
 
     if (url.pathname === "/api/muscle-groups") {
