@@ -16,7 +16,6 @@ workflows:
             npx cap add ios
           fi
           npx cap sync ios
-          node scripts/patch-ios-native.mjs
           APPICON_DIR="$CM_BUILD_DIR/ios/App/App/Assets.xcassets/AppIcon.appiconset"
           mkdir -p "$APPICON_DIR"
           cp "$CM_BUILD_DIR/resources/icon.png" "$APPICON_DIR/AppIcon-512@2x.png"
@@ -43,8 +42,6 @@ workflows:
           set -euo pipefail
           xcodebuild -version
           test -f "$CM_BUILD_DIR/ios/App/App.xcodeproj/project.pbxproj"
-          grep -q "KinetosphereBridgeViewController" "$CM_BUILD_DIR/ios/App/App/AppDelegate.swift"
-          grep -q 'customClass="KinetosphereBridgeViewController"' "$CM_BUILD_DIR/ios/App/App/Base.lproj/Main.storyboard"
           xcodebuild \
             -project "$CM_BUILD_DIR/ios/App/App.xcodeproj" \
             -scheme App \
@@ -95,7 +92,6 @@ workflows:
             npx cap add ios
           fi
           npx cap sync ios
-          node scripts/patch-ios-native.mjs
           APPICON_DIR="$CM_BUILD_DIR/ios/App/App/Assets.xcassets/AppIcon.appiconset"
           mkdir -p "$APPICON_DIR"
           cp "$CM_BUILD_DIR/resources/icon.png" "$APPICON_DIR/AppIcon-512@2x.png"
@@ -129,8 +125,6 @@ workflows:
           set -euo pipefail
           xcodebuild -version
           test -f "$CM_BUILD_DIR/$XCODE_PROJECT/project.pbxproj"
-          grep -q "KinetosphereBridgeViewController" "$CM_BUILD_DIR/ios/App/App/AppDelegate.swift"
-          grep -q 'customClass="KinetosphereBridgeViewController"' "$CM_BUILD_DIR/ios/App/App/Base.lproj/Main.storyboard"
           xcodebuild \
             -project "$CM_BUILD_DIR/$XCODE_PROJECT" \
             -scheme "$XCODE_SCHEME" \
