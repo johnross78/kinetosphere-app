@@ -5,6 +5,7 @@ const root = process.cwd();
 const mobileShell = path.join(root, 'www', 'mobile-shell.css');
 const indexFile = path.join(root, 'www', 'index.html');
 const rc29RuntimeFile = path.join(root, 'www', 'rc29-player-runtime.js');
+const rc36DiagFile = path.join(root, 'www', 'rc36-viewport-diagnostic.js');
 
 const patches = [
   {
@@ -65,23 +66,28 @@ fs.writeFileSync(mobileShell, shell);
 
 if (fs.existsSync(indexFile)) {
   let html = fs.readFileSync(indexFile, 'utf8');
-  for (const prior of ['6.10.32','6.10.33','6.10.34','6.10.35','6.10.36','6.10.37','6.10.38','6.10.39','6.10.40']) {
-    html = html.replaceAll('v'+prior, 'v6.10.41');
-    html = html.replaceAll(prior, '6.10.41');
+  for (const prior of ['6.10.32','6.10.33','6.10.34','6.10.35','6.10.36','6.10.37','6.10.38','6.10.39','6.10.40','6.10.41']) {
+    html = html.replaceAll('v'+prior, 'v6.10.42');
+    html = html.replaceAll(prior, '6.10.42');
   }
 
   const runtimeTag = '<script src="rc29-player-runtime.js"></script>';
+  const rc36DiagTag = '<script src="rc36-viewport-diagnostic.js"></script>';
   for (const stale of [
     '<script src="rc31-player-runtime.js"></script>',
     '<script src="rc33-player-runtime.js"></script>',
-    '<script src="rc34-player-runtime.js"></script>'
+    '<script src="rc34-player-runtime.js"></script>',
+    rc36DiagTag
   ]) html = html.replaceAll(stale, '');
   html = html.replaceAll(runtimeTag, '');
   if (fs.existsSync(rc29RuntimeFile)) {
     html = html.replace('</body>', `${runtimeTag}\n</body>`);
   }
+  if (fs.existsSync(rc36DiagFile)) {
+    html = html.replace('</body>', `${rc36DiagTag}\n</body>`);
+  }
 
   fs.writeFileSync(indexFile, html);
 }
 
-console.log('Applied Kinetosphere RC29 stable Player baseline / v6.10.41; RC30-RC34 experiments retired from build.');
+console.log('Applied Kinetosphere RC36 diagnostic build / v6.10.42 on RC29 stable Player baseline; no layout changes.');
