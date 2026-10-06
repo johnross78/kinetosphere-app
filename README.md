@@ -127,3 +127,13 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - Hosted YouTube iframe geometry returns to a clean 100% × 100% fill with no percentage crop or safe-area expansion.
 - The runtime is explicitly excluded from native iPad shells and does not alter iPhone portrait, Cloudflare Stream, offline media, Player controls, anatomy layout, ribbon layout, timers, or circuit hydration.
 
+## RC34 / v6.10.40 — native iPhone rotation stabilization
+- RC29 remains the Player/layout baseline; iPad behavior remains unchanged.
+- RC33's web-only viewport stabilization runtime is no longer injected.
+- After Capacitor generates/syncs iOS, the build now patches the native shell with an iPhone-only CAPBridgeViewController subclass.
+- The native controller waits for UIKit's orientation transition completion, then repeatedly normalizes the WKWebView scroll-view insets and zoom scale while the transition settles.
+- The native controller dispatches a rotation-settled event back to the web layer only when the Player is active.
+- Hosted YouTube is rebuilt once on that native-settled event, against the final WKWebView geometry.
+- Codemagic now verifies that both the custom bridge controller and storyboard wiring exist before compiling.
+- iPad is explicitly excluded from the native normalization path. Portrait Player geometry, RC29 controls/anatomy/ribbon, circuit hydration, Cloudflare Stream, and offline media are unchanged.
+
