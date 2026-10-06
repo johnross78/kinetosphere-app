@@ -161,3 +161,15 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - RC29 remains the Player layout baseline; iPad remains unchanged.
 - The residual left black strip remains a separate hosted-YouTube bridge issue.
 
+## RC38 / v6.10.44 — circuit state integrity + iPhone landscape info-card reflow
+- RC37 remains the frozen iPhone landscape viewport/overflow baseline.
+- Clear Circuit now explicitly invalidates the persisted activeCircuit locally and in account cloud settings so a previously cleared circuit cannot resurrect after a hard close/startup sync.
+- A short-lived local clear marker protects an explicit clear across any in-flight cloud reconciliation and is removed once deletion is confirmed.
+- Preparing/launching a new circuit clears the explicit-clear marker normally.
+- iPhone landscape muscle-group copy now wraps within the actual half-card width instead of retaining taller-layout sizing.
+- iPhone landscape prescription/timer text is refit after render, resize, visualViewport resize, and orientation changes against the measured prescription cell.
+- Rapid muscle artwork is constrained to the shorter landscape card so it cannot force the right-side information card out of proportion.
+- iPad remains unchanged.
+- RC37 viewport containment remains unchanged.
+- The hosted YouTube black-strip investigation remains isolated to the Cloudflare bridge and is not modified by this app RC.
+
