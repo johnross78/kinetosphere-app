@@ -35,6 +35,15 @@ if (!fs.existsSync(mobileShell)) {
 const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 let shell = fs.readFileSync(mobileShell, 'utf8');
 
+
+const retiredPatches = ['RC30','RC31','RC32','RC33'];
+for (const name of retiredPatches) {
+  const start = `/* >>> ${name} PLAYER LAYOUT OVERRIDES >>> */`;
+  const end = `/* <<< ${name} PLAYER LAYOUT OVERRIDES <<< */`;
+  const existing = new RegExp(`${escapeRegExp(start)}[\\s\\S]*?${escapeRegExp(end)}\\n?`, 'm');
+  shell = shell.replace(existing, '');
+}
+
 for (const patch of patches) {
   if (!fs.existsSync(patch.file)) {
     console.log(`${patch.name} patch skipped: ${path.relative(root, patch.file)} is not present.`);
