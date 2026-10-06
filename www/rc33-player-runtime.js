@@ -104,10 +104,6 @@
   }
 
   window.addEventListener("orientationchange",stabilizeRotation,{passive:true});
-  window.addEventListener("resize",()=>{
-    if(isNativePhone() && isLandscape()) clearTimeout(timer);
-  },{passive:true});
-
   /* Some iOS builds omit orientationchange but do update matchMedia. */
   try{
     const mq=matchMedia("(orientation: landscape)");
