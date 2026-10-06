@@ -137,3 +137,12 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - Codemagic now verifies that both the custom bridge controller and storyboard wiring exist before compiling.
 - iPad is explicitly excluded from the native normalization path. Portrait Player geometry, RC29 controls/anatomy/ribbon, circuit hydration, Cloudflare Stream, and offline media are unchanged.
 
+## RC35 / v6.10.41 — restore stable landscape baseline
+- RC29 is restored as the authoritative Player/layout baseline.
+- RC30–RC34 phone-landscape crop, safe-area, viewport, and native post-rotation experiments are retired from the build path.
+- Postinstall now purges stale RC30–RC33 CSS blocks and removes RC31/RC33/RC34 runtime script tags so they cannot survive from prior iterations.
+- The RC34 custom native bridge controller is no longer applied by Codemagic or local iOS setup.
+- UIKit/WKWebView is allowed to keep the correct landscape geometry it already reaches immediately after rotation instead of being re-normalized afterward.
+- iPad behavior remains unchanged.
+- The remaining left black strip is treated as a separate hosted-YouTube bridge-source issue rather than a Player geometry problem.
+
