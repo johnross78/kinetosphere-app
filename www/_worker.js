@@ -41,9 +41,14 @@ function youtubeEmbedPage(requestUrl) {
   }
   const origin = url.origin;
   const html = `<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<style>html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden;position:relative}#player,#player iframe{position:absolute!important;inset:0!important;margin:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;border:0!important;display:block!important;background:#000}</style></head>
+<style>
+html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden;position:relative}
+body{min-width:0;min-height:0}
+#player{position:absolute!important;inset:0!important;margin:0!important;padding:0!important;width:100%!important;height:100%!important;overflow:hidden!important;background:#000}
+#player iframe{position:absolute!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;margin:0!important;padding:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;border:0!important;display:block!important;background:#000!important}
+</style></head>
 <body><div id="player"></div>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
@@ -59,11 +64,34 @@ window.onYouTubeIframeAPIReady=function(){
   onError:function(e){send('error',e.data)}
  }});
 };
-function syncPlayerSize(){
- try{if(player&&player.setSize)player.setSize(window.innerWidth,window.innerHeight)}catch(_){}
+function bridgeSize(){
+ const host=document.getElementById('player');
+ if(!host)return {width:0,height:0};
+ const r=host.getBoundingClientRect();
+ return {width:Math.max(0,Math.round(r.width)),height:Math.max(0,Math.round(r.height))};
 }
-window.addEventListener('resize',function(){setTimeout(syncPlayerSize,0)});
-window.addEventListener('orientationchange',function(){setTimeout(syncPlayerSize,120);setTimeout(syncPlayerSize,420)});
+function syncPlayerSize(){
+ try{
+  if(!player||!player.setSize)return;
+  const s=bridgeSize();
+  if(s.width>0&&s.height>0) player.setSize(s.width,s.height);
+ }catch(_){}
+}
+let resizeTimer=0;
+function schedulePlayerSize(){
+ clearTimeout(resizeTimer);
+ resizeTimer=setTimeout(function(){
+  syncPlayerSize();
+  requestAnimationFrame(syncPlayerSize);
+ },0);
+}
+window.addEventListener('resize',schedulePlayerSize,{passive:true});
+window.addEventListener('orientationchange',schedulePlayerSize,{passive:true});
+if(window.visualViewport)window.visualViewport.addEventListener('resize',schedulePlayerSize,{passive:true});
+if('ResizeObserver' in window){
+ const ro=new ResizeObserver(schedulePlayerSize);
+ ro.observe(document.getElementById('player'));
+}
 window.addEventListener('message',function(ev){
  const m=ev.data||{}; if(m.source!=='kinetosphere-parent'||!player)return;
  try{
