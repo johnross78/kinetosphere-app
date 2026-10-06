@@ -119,3 +119,11 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - Left and right safe-area insets are handled independently so either landscape orientation is supported.
 - Portrait iPhone, iPad, Cloudflare Stream, offline media, Player controls, anatomy layout, ribbon layout, timers, and circuit-hydration behavior are unchanged.
 
+## RC33 / v6.10.39 — first-rotation viewport stabilization
+- RC29 remains the Player/layout baseline; iPad behavior remains unchanged.
+- Supersedes RC30–RC32 phone-landscape crop/safe-area compensation with a viewport-first fix.
+- Native iPhone now forces WKWebView to discard a stale portrait layout viewport during rotation, then waits for visualViewport/window dimensions and scale to stabilize.
+- The hosted HTTPS YouTube bridge is recreated only after the final landscape viewport is confirmed, so it initializes against the correct dimensions.
+- Hosted YouTube iframe geometry returns to a clean 100% × 100% fill with no percentage crop or safe-area expansion.
+- The runtime is explicitly excluded from native iPad shells and does not alter iPhone portrait, Cloudflare Stream, offline media, Player controls, anatomy layout, ribbon layout, timers, or circuit hydration.
+
