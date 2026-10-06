@@ -44,10 +44,10 @@ function youtubeEmbedPage(requestUrl) {
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <style>
-html,body{margin:0;padding:0;width:100%;height:100%;background:#ff00ff;overflow:hidden;position:relative}
+html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden;position:relative}
 body{min-width:0;min-height:0}
-#player{position:absolute!important;inset:0!important;margin:0!important;padding:0!important;width:100%!important;height:100%!important;overflow:hidden!important;background:#ff00ff}
-#player iframe{position:absolute!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;margin:0!important;padding:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;border:0!important;display:block!important;background:#00ffff!important}
+#player{position:absolute!important;inset:0!important;margin:0!important;padding:0!important;width:100%!important;height:100%!important;overflow:hidden!important;background:#000}
+#player iframe{position:absolute!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;margin:0!important;padding:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;border:0!important;display:block!important;background:#000!important}
 </style></head>
 <body><div id="player"></div>
 <script src="https://www.youtube.com/iframe_api"></script>
@@ -93,12 +93,14 @@ function syncPlayerSize(){
 
   const iframe=player.getIframe&&player.getIframe();
   if(iframe){
+    const horizontalOverscan=Math.max(10,Math.ceil(width*0.018));
+    const renderWidth=Math.ceil(width+horizontalOverscan*2);
     iframe.style.position='absolute';
-    iframe.style.width=Math.ceil(width)+'px';
+    iframe.style.width=renderWidth+'px';
     iframe.style.height=Math.ceil(height)+'px';
     iframe.style.maxWidth='none';
     iframe.style.maxHeight='none';
-    iframe.style.left=((s.width-width)/2)+'px';
+    iframe.style.left=(((s.width-width)/2)-horizontalOverscan)+'px';
     iframe.style.top=((s.height-height)/2)+'px';
     iframe.style.right='auto';
     iframe.style.bottom='auto';
@@ -137,7 +139,7 @@ window.addEventListener('message',function(ev){
   return new Response(html, {
     status:200,
     headers:{
-      "X-Kinetosphere-YouTube-Bridge":"2026-10-06-v4-diag",
+      "X-Kinetosphere-YouTube-Bridge":"2026-10-06-v5",
       "Content-Type":"text/html; charset=utf-8",
       "Cache-Control":"no-store",
       "Referrer-Policy":"strict-origin-when-cross-origin",
@@ -167,8 +169,8 @@ export default {
 
     if (url.pathname === "/api/bridge-version") {
       return json({
-        youtubeBridge:"2026-10-06-v4-diag",
-        sizing:"diagnostic-bridge-vs-youtube-surface",
+        youtubeBridge:"2026-10-06-v5",
+        sizing:"youtube-iframe-horizontal-overscan",
         webBaseline:"v6.10.32-compatible"
       },200,{"Cache-Control":"no-store"});
     }
