@@ -5,6 +5,7 @@ if [ ! -d ios ]; then
   npx cap add ios
 fi
 npx cap sync ios
+node scripts/patch-ios-native.mjs
 APPICON_DIR="ios/App/App/Assets.xcassets/AppIcon.appiconset"
 mkdir -p "$APPICON_DIR"
 cp resources/icon.png "$APPICON_DIR/AppIcon-512@2x.png"
