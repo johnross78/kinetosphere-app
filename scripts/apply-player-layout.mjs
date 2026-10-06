@@ -6,6 +6,7 @@ const mobileShell = path.join(root, 'www', 'mobile-shell.css');
 const indexFile = path.join(root, 'www', 'index.html');
 const rc29RuntimeFile = path.join(root, 'www', 'rc29-player-runtime.js');
 const rc36DiagFile = path.join(root, 'www', 'rc36-viewport-diagnostic.js');
+const rc38RuntimeFile = path.join(root, 'www', 'rc38-player-runtime.js');
 
 const patches = [
   {
@@ -31,6 +32,12 @@ const patches = [
     file: path.join(root, 'www', 'rc37-player-layout.css'),
     start: '/* >>> RC37 PLAYER LAYOUT OVERRIDES >>> */',
     end: '/* <<< RC37 PLAYER LAYOUT OVERRIDES <<< */',
+  },
+  {
+    name: 'RC38',
+    file: path.join(root, 'www', 'rc38-player-layout.css'),
+    start: '/* >>> RC38 PLAYER LAYOUT OVERRIDES >>> */',
+    end: '/* <<< RC38 PLAYER LAYOUT OVERRIDES <<< */',
   },
 ]
 
@@ -72,24 +79,29 @@ fs.writeFileSync(mobileShell, shell);
 
 if (fs.existsSync(indexFile)) {
   let html = fs.readFileSync(indexFile, 'utf8');
-  for (const prior of ['6.10.32','6.10.33','6.10.34','6.10.35','6.10.36','6.10.37','6.10.38','6.10.39','6.10.40','6.10.41','6.10.42']) {
-    html = html.replaceAll('v'+prior, 'v6.10.43');
-    html = html.replaceAll(prior, '6.10.43');
+  for (const prior of ['6.10.32','6.10.33','6.10.34','6.10.35','6.10.36','6.10.37','6.10.38','6.10.39','6.10.40','6.10.41','6.10.42','6.10.43']) {
+    html = html.replaceAll('v'+prior, 'v6.10.44');
+    html = html.replaceAll(prior, '6.10.44');
   }
 
   const runtimeTag = '<script src="rc29-player-runtime.js"></script>';
+  const rc38RuntimeTag = '<script src="rc38-player-runtime.js"></script>';
   for (const stale of [
     '<script src="rc31-player-runtime.js"></script>',
     '<script src="rc33-player-runtime.js"></script>',
     '<script src="rc34-player-runtime.js"></script>',
-    '<script src="rc36-viewport-diagnostic.js"></script>'
+    '<script src="rc36-viewport-diagnostic.js"></script>',
+    rc38RuntimeTag
   ]) html = html.replaceAll(stale, '');
   html = html.replaceAll(runtimeTag, '');
   if (fs.existsSync(rc29RuntimeFile)) {
     html = html.replace('</body>', `${runtimeTag}\n</body>`);
   }
+  if (fs.existsSync(rc38RuntimeFile)) {
+    html = html.replace('</body>', `${rc38RuntimeTag}\n</body>`);
+  }
 
   fs.writeFileSync(indexFile, html);
 }
 
-console.log('Applied Kinetosphere RC37 / v6.10.43 intrinsic-width containment on RC29 stable Player baseline; diagnostics removed.');
+console.log('Applied Kinetosphere RC38 / v6.10.44 state integrity + iPhone landscape info-card reflow on frozen RC37 viewport baseline.');
