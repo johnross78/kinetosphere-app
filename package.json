@@ -1,8 +1,8 @@
 {
   "name": "kinetosphere-mobile",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "private": true,
-  "description": "Kinetosphere iOS RC33: preserves the RC29 Player baseline, removes prior iPhone landscape crop/safe-area compensation, stabilizes the native WKWebView viewport on first rotation, then recreates the hosted YouTube bridge only after the landscape viewport settles; iPad remains excluded; synchronized with web v6.10.39.",
+  "description": "Kinetosphere iOS RC34: preserves the RC29 Player baseline, moves first-rotation stabilization into a native iPhone-only CAPBridgeViewController, resets WKWebView zoom/insets after UIKit completes rotation, and refreshes hosted YouTube only after the native rotation-settled event; iPad remains excluded; synchronized with web v6.10.40.",
   "scripts": {
     "postinstall": "node scripts/apply-player-layout.mjs",
     "cap:sync": "npx cap sync",
