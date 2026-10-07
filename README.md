@@ -180,3 +180,9 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - Existing provider storefront editing now uses the centralized capability helper instead of duplicating role checks.
 - The existing personal super-admin shortcut is intentionally left in place for this incremental step; replacing it with a true platform-role mechanism is the next hardening item.
 
+## Provider Readiness Phase 1 — platform super-admin role
+- The current Kinetosphere owner account now carries an explicit platform admin role in Supabase authentication metadata.
+- The app no longer grants super-admin access by matching one hard-coded personal user ID.
+- Super-admin checks now rely on account metadata (role=admin or the existing boolean admin flag), matching the database RLS policies already protecting provider/admin data.
+- This preserves current Kinetosphere administration while making future business-entity/admin account changes much cleaner.
+
