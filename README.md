@@ -173,3 +173,10 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - RC37 viewport containment remains unchanged.
 - The hosted YouTube black-strip investigation remains isolated to the Cloudflare bridge and is not modified by this app RC.
 
+## Provider Readiness Phase 1 — access hardening
+- Signed-in provider access now fails closed. If account/provider access cannot be verified, provider-gated sources remain unavailable until verification succeeds instead of falling back to broad beta access.
+- Guest mode retains the current included-catalog behavior for now.
+- Provider roles now resolve through a centralized capability map: owner/admin can edit storefront/media, view analytics, and manage members; editor can edit storefront/media; analyst can view analytics.
+- Existing provider storefront editing now uses the centralized capability helper instead of duplicating role checks.
+- The existing personal super-admin shortcut is intentionally left in place for this incremental step; replacing it with a true platform-role mechanism is the next hardening item.
+
