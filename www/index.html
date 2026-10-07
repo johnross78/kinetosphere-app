@@ -2094,7 +2094,6 @@ const EQUIPMENT_ALIAS_MAP = {
 const MUSCLE_GROUPS = ["Quads", "Glutes", "Hamstrings", "Posterior Chain", "Calves", "Chest", "Back", "Lats", "Shoulders", "Biceps", "Triceps", "Forearms", "Core", "Hip Flexors", "Adductors", "Abductors", "Upper Back", "Lower Back", "Full Body", "Cardio", "Mobility", "Other"];
 const SUBCATEGORIES = MUSCLE_GROUPS;
 
-const OWNER_USER_ID="9d675cbe-af61-441a-8937-8f47bd00bb2f";
 const SHARED_EXERCISES_TABLE="shared_exercises";
 const LOCAL_DATA_OWNER_KEY="johnsGymLocalDataOwner";
 
@@ -2207,7 +2206,7 @@ const escapeHtml = value => String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp
 function isAdminUser(){
   if(!cloudUser) return false;
   const meta=cloudUser.app_metadata||{};
-  return cloudUser.id===OWNER_USER_ID || meta.admin===true || meta.role==="admin";
+  return meta.admin===true || meta.role==="admin";
 }
 function isOwnerUser(){
   return isAdminUser();
