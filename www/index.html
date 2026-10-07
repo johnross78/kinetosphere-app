@@ -2212,6 +2212,23 @@ function isAdminUser(){
 function isOwnerUser(){
   return isAdminUser();
 }
+
+const PROVIDER_ROLE_CAPABILITIES={
+  owner:new Set(["storefront:edit","media:edit","analytics:view","members:manage"]),
+  admin:new Set(["storefront:edit","media:edit","analytics:view","members:manage"]),
+  editor:new Set(["storefront:edit","media:edit"]),
+  analyst:new Set(["analytics:view"])
+};
+function providerMemberRole(providerId){
+  return String(providerMembersByProvider.get(String(providerId))?.role||"").toLowerCase();
+}
+function providerCan(providerOrId,capability){
+  if(isAdminUser()) return true;
+  const providerId=typeof providerOrId==="object" ? providerOrId?.id : providerOrId;
+  if(!providerId || !capability) return false;
+  const role=providerMemberRole(providerId);
+  return Boolean(PROVIDER_ROLE_CAPABILITIES[role]?.has(capability));
+}
 function refreshAdminNavigation(){
   const admin=isAdminUser();
   document.querySelectorAll(".admin-only").forEach(node=>node.classList.toggle("hidden",!admin));
@@ -2371,9 +2388,7 @@ function renderProviderDetail(){
 
 function providerCanEditStorefront(provider){
   if(!provider || !cloudUser) return false;
-  if(isAdminUser()) return true;
-  const member=providerMembersByProvider.get(String(provider.id));
-  return Boolean(member && ["owner","admin","editor"].includes(String(member.role||"")));
+  return providerCan(provider,"storefront:edit");
 }
 function editableStorefrontProviders(){ return providerCatalog.filter(providerCanEditStorefront).sort((a,b)=>String(a.name).localeCompare(String(b.name))); }
 function fillProviderStorefrontForm(providerId){
@@ -2465,8 +2480,13 @@ function renderProviderAccessUI(){
 }
 async function loadProviderAccessState(){
   providerCatalog=[]; providerEntitlementIds=new Set(); providerEntitlementsByProvider=new Map(); providerMemberIds=new Set(); providerMembersByProvider=new Map(); providerAcquisitionRequestsByProvider=new Map();
-  accessibleProviderSources=new Set(EXERCISE_SOURCES); // beta fallback keeps current included catalog intact
-  if(!cloudUser){ renderProviderAccessUI(); return; }
+  accessibleProviderSources=new Set();
+  if(!cloudUser){
+    // Guest mode intentionally keeps the current included catalog available.
+    accessibleProviderSources=new Set(EXERCISE_SOURCES);
+    renderProviderAccessUI();
+    return;
+  }
   try{
     const [{data:providers,error:providerError},{data:storefronts,error:storefrontError},{data:entitlements,error:entitlementError},{data:members,error:memberError},{data:requests,error:requestError}]=await Promise.all([
       supabaseClient.from("providers").select("id,slug,source_key,name,description,status,discoverable,free_sample_enabled,access_model").eq("status","active"),
@@ -2489,11 +2509,11 @@ async function loadProviderAccessState(){
     providerAcquisitionRequestsByProvider=new Map((requests||[]).map(r=>[String(r.provider_id),r]));
     accessibleProviderSources=new Set();
     for(const p of providerCatalog){ if(providerHasAccess(p) && p.source_key) accessibleProviderSources.add(String(p.source_key)); }
-    // Preserve compatibility for legacy rows that currently resolve to OPEX.
-    if(!accessibleProviderSources.size) accessibleProviderSources=new Set(EXERCISE_SOURCES);
   }catch(err){
-    console.warn("Provider access load failed; retaining beta included access",err);
-    accessibleProviderSources=new Set(EXERCISE_SOURCES);
+    // Signed-in provider access must fail closed. If we cannot verify access,
+    // provider-gated sources stay unavailable until the account state loads correctly.
+    console.warn("Provider access load failed; blocking provider-gated sources until access can be verified",err);
+    accessibleProviderSources=new Set();
   }
   renderProviderAccessUI();
   if(selectedProviderId) renderProviderDetail();
