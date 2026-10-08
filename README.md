@@ -219,3 +219,14 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - Provider Admin and Analyst roles cannot manage team membership; team-management authority is reserved for the provider owner (or Kinetosphere Super Admin).
 - Provider-team actions are enforced by server-side RPC permission checks, not just hidden UI controls.
 
+## RC39 / v6.10.45 — branded app entry and Home
+- Added the supplied light and dark Kinetosphere Lottie splash assets under www/assets/splash.
+- Splash uses the system appearance, plays once on the supplied background colors, and begins the landing handoff at the supplied start-exit timing.
+- Added a dedicated entry experience: signed-out users land on a Kinetosphere Sign In / Create Account screen, with Explore as Guest retained for the current free/guest workflow.
+- Existing authenticated users skip the login form after the splash and land on Home.
+- Added the first Kinetosphere Home dashboard with Build Workout, Programs & Flows, Discover Providers, Resume Workout when an active circuit exists, and Provider Admin when the signed-in account is eligible.
+- The Kinetosphere header logo now acts as a Home shortcut; desktop navigation also gains a Home tab without changing the existing mobile bottom-navigation footprint.
+- Reduced-motion users receive a static brand lockup instead of the animated splash.
+- The existing RC38 Player layout/runtime files are unchanged by this release.
+- Package version: 1.0.19.
+
