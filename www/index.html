@@ -1403,6 +1403,7 @@ html[data-theme="light"] .provider-hero-media{background:rgba(23,32,42,.04)}
           <button class="tab" data-view="billing">Billing</button>
           <button class="tab" data-view="support">Support</button>
           <button class="tab" data-view="about">About</button>
+          <button class="tab provider-admin-only hidden" id="providerAdminSettingsButton" data-view="providerAdmin">Provider Admin</button>
           <div class="settings-divider admin-only hidden" id="adminSettingsDivider"></div>
           <button class="tab admin-only hidden" id="adminSettingsButton" data-view="importer">Admin</button>
         </div>
@@ -1748,6 +1749,39 @@ html[data-theme="light"] .provider-hero-media{background:rgba(23,32,42,.04)}
   <section id="billingView" class="hidden"><div class="panel"><h2>Billing</h2><div class="meta">Kinetosphere subscription and provider-access billing controls will live here.</div></div></section>
   <section id="supportView" class="hidden"><div class="panel"><h2>Support</h2><div class="meta">Help, feedback, provider-access troubleshooting, and support requests will live here.</div></div></section>
   <section id="aboutView" class="hidden"><div class="panel"><h2>About Kinetosphere</h2><div class="meta" style="margin-bottom:12px">Kinetosphere brings circuit building, provider programs, workout playback, and connected training libraries into one experience.</div><div class="notice"><strong>Current version:</strong> v6.10.32</div><div class="about-legal-disclaimer"><h3>Exercise &amp; Health Disclaimer</h3><p>Kinetosphere provides exercise and fitness information for general educational purposes only. It is not medical advice and is not a substitute for evaluation, diagnosis, or treatment by a qualified healthcare professional.</p><p>Exercise involves inherent risks, including the risk of injury. You are responsible for determining whether an exercise or program is appropriate for you, using suitable equipment and technique, and stopping if you experience pain, dizziness, unusual shortness of breath, or other concerning symptoms. Consult an appropriate healthcare professional before beginning or changing an exercise program if you have a medical condition, injury, are pregnant, or have other health concerns.</p><p>Content from independent providers reflects those providers’ guidance. Kinetosphere does not guarantee results or that any exercise, program, or provider content is suitable or safe for every person. By choosing to participate, you accept responsibility for your own exercise decisions and participation.</p><div class="meta">Interim legal language — to be reviewed by counsel before commercial launch.</div></div></div></section>
+
+  <section id="providerAdminView" class="hidden">
+    <div class="panel">
+      <div class="programs-header-row">
+        <div>
+          <h2 style="margin:0">Provider Admin</h2>
+          <div class="meta" style="margin-top:5px">Your provider workspace. This page only shows organizations and content your account is allowed to manage.</div>
+        </div>
+      </div>
+      <div id="providerAdminEmpty" class="notice hidden" style="margin-top:14px">No provider administration role is attached to this account.</div>
+      <div id="providerAdminWorkspace" class="hidden" style="margin-top:14px">
+        <div class="row">
+          <div><label>Provider</label><select id="providerAdminSelect"></select></div>
+          <div><label>Your role</label><input id="providerAdminRole" readonly></div>
+        </div>
+        <div class="provider-detail-stats" style="margin-top:16px">
+          <div class="provider-stat"><strong id="providerAdminTeamCount">0</strong><span class="meta">Team members</span></div>
+          <div class="provider-stat"><strong id="providerAdminExerciseCount">0</strong><span class="meta">Owned exercises</span></div>
+          <div class="provider-stat"><strong id="providerAdminAccessModel">—</strong><span class="meta">Access model</span></div>
+        </div>
+        <div class="provider-section"><h3>Your Team</h3><div id="providerAdminTeamList" class="list"></div></div>
+        <div class="provider-section">
+          <h3>Recognized Provider Content</h3>
+          <div class="meta" style="margin-bottom:10px">This is the content Kinetosphere currently associates with this provider account. Editing tools will be added after ownership is verified.</div>
+          <div id="providerAdminContentList" class="list"></div>
+        </div>
+        <div class="actions" style="margin-top:16px">
+          <button class="btn secondary" id="providerAdminEditStorefront" type="button">Provider Page Editor (coming next)</button>
+          <button class="btn secondary" id="providerAdminViewPublic" type="button">View Provider Page</button>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section id="importerView" class="hidden">
     <div class="panel">
@@ -2110,6 +2144,8 @@ let providerEntitlementIds=new Set();
 let providerEntitlementsByProvider=new Map();
 let providerMemberIds=new Set();
 let providerMembersByProvider=new Map();
+let providerTeamByProvider=new Map();
+let providerOwnedContentByProvider=new Map();
 let providerAcquisitionRequestsByProvider=new Map();
 let selectedProviderId=null;
 let discoverSearchQuery="";
@@ -2228,9 +2264,17 @@ function providerCan(providerOrId,capability){
   const role=providerMemberRole(providerId);
   return Boolean(PROVIDER_ROLE_CAPABILITIES[role]?.has(capability));
 }
+function canOpenProviderAdmin(){
+  return Boolean(cloudUser && (isAdminUser() || providerMemberIds.size));
+}
+function refreshProviderAdminNavigation(){
+  const allowed=canOpenProviderAdmin();
+  document.querySelectorAll(".provider-admin-only").forEach(node=>node.classList.toggle("hidden",!allowed));
+}
 function refreshAdminNavigation(){
   const admin=isAdminUser();
   document.querySelectorAll(".admin-only").forEach(node=>node.classList.toggle("hidden",!admin));
+  refreshProviderAdminNavigation();
 }
 
 const ACTIVE_ENTITLEMENT_STATUSES=new Set(["active","trialing","comped"]);
@@ -2385,6 +2429,68 @@ function renderProviderDetail(){
   host.querySelectorAll("[data-provider-edit]").forEach(btn=>btn.onclick=()=>openProviderStorefrontAdmin(btn.dataset.providerEdit));
 }
 
+function providerAdminProviders(){
+  if(!cloudUser) return [];
+  return providerCatalog
+    .filter(p=>isAdminUser() || providerMemberIds.has(String(p.id)))
+    .sort((a,b)=>String(a.name||"").localeCompare(String(b.name||"")));
+}
+function providerAdminRoleLabel(providerId){
+  if(isAdminUser() && !providerMembersByProvider.has(String(providerId))) return "Kinetosphere Super Admin";
+  const role=providerMemberRole(providerId);
+  return role ? role.charAt(0).toUpperCase()+role.slice(1) : (isAdminUser()?"Kinetosphere Super Admin":"");
+}
+function renderProviderAdminDashboard(providerId){
+  const workspace=el("providerAdminWorkspace"), empty=el("providerAdminEmpty"), select=el("providerAdminSelect");
+  if(!workspace || !empty || !select) return;
+  const providers=providerAdminProviders();
+  const allowed=providers.length>0;
+  empty.classList.toggle("hidden",allowed);
+  workspace.classList.toggle("hidden",!allowed);
+  if(!allowed) return;
+
+  select.innerHTML=providers.map(p=>\`<option value="\${escapeHtml(p.id)}">\${escapeHtml(p.name)}</option>\`).join("");
+  const active=providers.find(p=>String(p.id)===String(providerId||select.value))||providers[0];
+  select.value=String(active.id);
+
+  const pid=String(active.id);
+  const team=providerTeamByProvider.get(pid)||[];
+  const owned=providerOwnedContentByProvider.get(pid)||[];
+  const ownedExercises=owned.filter(row=>row.entity_type==="exercise");
+
+  if(el("providerAdminRole")) el("providerAdminRole").value=providerAdminRoleLabel(pid);
+  if(el("providerAdminTeamCount")) el("providerAdminTeamCount").textContent=String(team.length);
+  if(el("providerAdminExerciseCount")) el("providerAdminExerciseCount").textContent=String(ownedExercises.length);
+  if(el("providerAdminAccessModel")) el("providerAdminAccessModel").textContent=String(active.access_model||"—");
+
+  const teamHost=el("providerAdminTeamList");
+  if(teamHost){
+    teamHost.innerHTML=team.length?team.map(row=>{
+      const self=row.user_id===cloudUser?.id;
+      return \`<div class="item"><div class="item-head"><div><div class="name">\${self?"You":"Team member"}</div><div class="meta">\${escapeHtml(String(row.user_id).slice(0,8))}…</div></div><span class="badge">\${escapeHtml(row.role||"member")}</span></div></div>\`;
+    }).join(""):'<div class="meta">No provider team members found.</div>';
+  }
+
+  const contentHost=el("providerAdminContentList");
+  if(contentHost){
+    const rows=ownedExercises.slice(0,30).map(row=>{
+      const ex=exercises.find(x=>String(x.id)===String(row.entity_id));
+      const name=ex?cleanedExerciseName(ex):row.entity_id;
+      return \`<div class="item"><div class="item-head"><div><div class="name">\${escapeHtml(name)}</div><div class="meta">Exercise · \${escapeHtml(row.entity_id)}</div></div><span class="badge">\${escapeHtml(active.name)}</span></div></div>\`;
+    }).join("");
+    const more=ownedExercises.length>30?\`<div class="meta" style="padding:8px 2px">Showing 30 of \${ownedExercises.length} recognized exercises.</div>\`:"";
+    contentHost.innerHTML=rows+more || '<div class="meta">No verified provider-owned exercises are currently mapped.</div>';
+  }
+
+  const editBtn=el("providerAdminEditStorefront");
+  if(editBtn){
+    editBtn.classList.toggle("hidden",!providerCanEditStorefront(active));
+    editBtn.dataset.providerId=pid;
+  }
+  const viewBtn=el("providerAdminViewPublic");
+  if(viewBtn) viewBtn.dataset.providerId=pid;
+}
+
 function providerCanEditStorefront(provider){
   if(!provider || !cloudUser) return false;
   return providerCan(provider,"storefront:edit");
@@ -2478,7 +2584,7 @@ function renderProviderAccessUI(){
   document.querySelectorAll("[data-provider-detail]").forEach(btn=>btn.onclick=()=>openProviderDetail(btn.dataset.providerDetail));
 }
 async function loadProviderAccessState(){
-  providerCatalog=[]; providerEntitlementIds=new Set(); providerEntitlementsByProvider=new Map(); providerMemberIds=new Set(); providerMembersByProvider=new Map(); providerAcquisitionRequestsByProvider=new Map();
+  providerCatalog=[]; providerEntitlementIds=new Set(); providerEntitlementsByProvider=new Map(); providerMemberIds=new Set(); providerMembersByProvider=new Map(); providerTeamByProvider=new Map(); providerOwnedContentByProvider=new Map(); providerAcquisitionRequestsByProvider=new Map();
   accessibleProviderSources=new Set();
   if(!cloudUser){
     // Guest mode intentionally keeps the current included catalog available.
@@ -2506,6 +2612,26 @@ async function loadProviderAccessState(){
     providerMembersByProvider=new Map((members||[]).map(r=>[String(r.provider_id),r]));
     providerMemberIds=new Set((members||[]).map(r=>String(r.provider_id)));
     providerAcquisitionRequestsByProvider=new Map((requests||[]).map(r=>[String(r.provider_id),r]));
+
+    const managedProviderIds=(isAdminUser()?providerCatalog.map(p=>String(p.id)):[...providerMemberIds]).filter(Boolean);
+    if(managedProviderIds.length){
+      const [{data:teamRows,error:teamError},{data:ownershipRows,error:ownershipError}]=await Promise.all([
+        supabaseClient.from("provider_members").select("provider_id,user_id,role,created_at").in("provider_id",managedProviderIds),
+        supabaseClient.from("provider_content_ownership").select("provider_id,entity_type,entity_id,source").in("provider_id",managedProviderIds)
+      ]);
+      if(teamError) throw teamError;
+      if(ownershipError) throw ownershipError;
+      for(const row of (teamRows||[])){
+        const key=String(row.provider_id);
+        if(!providerTeamByProvider.has(key)) providerTeamByProvider.set(key,[]);
+        providerTeamByProvider.get(key).push(row);
+      }
+      for(const row of (ownershipRows||[])){
+        const key=String(row.provider_id);
+        if(!providerOwnedContentByProvider.has(key)) providerOwnedContentByProvider.set(key,[]);
+        providerOwnedContentByProvider.get(key).push(row);
+      }
+    }
     accessibleProviderSources=new Set();
     for(const p of providerCatalog){ if(providerHasAccess(p) && p.source_key) accessibleProviderSources.add(String(p.source_key)); }
   }catch(err){
@@ -2517,6 +2643,8 @@ async function loadProviderAccessState(){
   renderProviderAccessUI();
   if(selectedProviderId) renderProviderDetail();
   renderProviderStorefrontAdmin();
+  renderProviderAdminDashboard();
+  refreshProviderAdminNavigation();
   renderAllLists();
 }
 
@@ -5836,16 +5964,19 @@ function showView(name){
   const playerWasVisible=el("playerView") && !el("playerView").classList.contains("hidden");
   if(playerWasVisible && name!=="player") teardownPlayerRuntime({stopTimers:true});
   if(name==="importer" && !isAdminUser()){
+    name=canOpenProviderAdmin()?"providerAdmin":"account";
+  }
+  if(name==="providerAdmin" && !canOpenProviderAdmin()){
     name="account";
   }
   document.body.classList.toggle("player-active", name==="player");
   updateMobileNavActive(name);
-  ["library","builder","programs","discover","providerDetail","account","preferences","profile","billing","support","about","importer","player"].forEach(v=>{
+  ["library","builder","programs","discover","providerDetail","account","preferences","profile","billing","support","about","providerAdmin","importer","player"].forEach(v=>{
     el(v+"View").classList.toggle("hidden",v!==name);
     document.querySelector(`[data-view="${v}"]`)?.classList.toggle("active",v===name);
   });
   if(name==="providerDetail") document.querySelector('[data-view="discover"]')?.classList.add("active");
-  if(el("settingsMenuBtn")) el("settingsMenuBtn").classList.toggle("active",["library","account","preferences","profile","billing","support","about","importer"].includes(name));
+  if(el("settingsMenuBtn")) el("settingsMenuBtn").classList.toggle("active",["library","account","preferences","profile","billing","support","about","providerAdmin","importer"].includes(name));
   el("subtitle").textContent=name==="library"?"Exercise library":
     name==="builder"?"":
     name==="programs"?"Browse and launch programs & flows":
@@ -5857,11 +5988,13 @@ function showView(name){
     name==="billing"?"Billing":
     name==="support"?"Support":
     name==="about"?"About Kinetosphere":
+    name==="providerAdmin"?"Provider administration":
     name==="importer"?"Backend provider administration":
     (activeCircuit?`${activeCircuit.name} · ${activeCircuit.rounds} rounds`:"No circuit loaded");
 
   // Keep Player synchronized with the most recently saved active circuit.
   if(name==="preferences") renderOfflineCacheStatus();
+  if(name==="providerAdmin") renderProviderAdminDashboard();
   if(name==="importer") loadMediaHealthIssues();
   if(name==="player"){
     currentExercise=0;
@@ -7674,6 +7807,9 @@ document.addEventListener("click",e=>{
   if(["nextBtn","prevBtn","timerStart","restartBtn"].includes(id)) nativeHaptic(id==="nextBtn"?"medium":"light");
 });
 
+if(el("providerAdminSelect")) el("providerAdminSelect").onchange=e=>renderProviderAdminDashboard(e.target.value);
+if(el("providerAdminEditStorefront")) el("providerAdminEditStorefront").onclick=()=>alert("Provider Page editing will move into this Provider Admin workspace in the next step. The platform import tools remain Super Admin only.");
+if(el("providerAdminViewPublic")) el("providerAdminViewPublic").onclick=e=>{ const id=e.currentTarget.dataset.providerId; if(id) openProviderDetail(id); };
 if(el("storefrontProviderSelect")) el("storefrontProviderSelect").onchange=e=>fillProviderStorefrontForm(e.target.value);
 if(el("saveProviderStorefront")) el("saveProviderStorefront").onclick=()=>saveProviderStorefront();
 if(el("previewProviderStorefront")) el("previewProviderStorefront").onclick=()=>{ const id=el("storefrontProviderSelect")?.value; if(id) openProviderDetail(id); };
