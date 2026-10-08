@@ -1365,6 +1365,8 @@ html[data-theme="light"] .provider-hero-media{background:rgba(23,32,42,.04)}
 }
 </style>
 <link rel="stylesheet" href="mobile-shell.css" />
+<link rel="stylesheet" href="entry-experience.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js" defer></script>
 
 <style id="v61031-fixes">
 /* v6.10.32 — intro audio control + compact provider-heading control. */
@@ -1376,7 +1378,7 @@ html[data-theme="light"] .provider-hero-media{background:rgba(23,32,42,.04)}
 .program-intro-mode #videoAudioBtn{display:inline-flex!important;visibility:visible!important}
 </style>
 </head>
-<body>
+<body class="entry-booting">
 <div id="saveToast" class="hidden" role="status" aria-live="polite">Circuit saved.</div>
 <div id="globalSyncBadge" class="global-sync-badge">Local</div>
 <div class="app">
@@ -8033,5 +8035,6 @@ init().catch(err=>{
 
 window.addEventListener("DOMContentLoaded",()=>{ initAppearanceControls(); initMobileShellControls(); setTimeout(()=>{ loadAppearancePreference().catch(()=>{}); loadOfflinePreferences().catch(()=>{}); },300); });
 </script>
+<script src="entry-experience.js"></script>
 </body>
 </html>
