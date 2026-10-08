@@ -197,3 +197,10 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - Let a user scan a room with the phone camera to identify available workout equipment.
 - Convert recognized equipment into Builder / Smart Randomizer equipment filters, with user confirmation/editing before the scan affects workout generation.
 
+## Provider Readiness Phase 1 — first Provider Admin workspace
+- Added a dedicated Provider Admin entry in Settings for eligible provider members and Kinetosphere platform admins.
+- Provider Admin is separate from the platform-only Backend Provider Administration/importer area.
+- The first dashboard shows the provider identity, the signed-in user's provider role, team-member count, verified owned-exercise count, access model, a scoped team list, and a sample of recognized provider-owned exercises.
+- Provider staff cannot enter the platform importer; attempts are redirected back to their Provider Admin workspace.
+- Provider page editing is intentionally marked as the next step rather than exposing the platform importer to providers.
+
