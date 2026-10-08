@@ -1711,6 +1711,11 @@ html[data-theme="light"] .provider-hero-media{background:rgba(23,32,42,.04)}
         <div class="meta" style="margin-bottom:10px">Sources available to this account. Included, connected, subscribed, or provider-admin access is reflected automatically.</div>
         <div id="connectedProvidersList"><div class="meta">Sign in to load provider access.</div></div>
       </div>
+      <div class="panel hidden" id="providerInvitesPanel" style="margin-top:16px;padding:16px">
+        <h3 style="margin-top:0">Provider Invitations</h3>
+        <div class="meta" style="margin-bottom:10px">Invitations sent to the email address on this Kinetosphere account.</div>
+        <div id="incomingProviderInvitesList" class="list"></div>
+      </div>
     </div>
   </section>
 
@@ -1769,7 +1774,21 @@ html[data-theme="light"] .provider-hero-media{background:rgba(23,32,42,.04)}
           <div class="provider-stat"><strong id="providerAdminExerciseCount">0</strong><span class="meta">Owned exercises</span></div>
           <div class="provider-stat"><strong id="providerAdminAccessModel">—</strong><span class="meta">Access model</span></div>
         </div>
-        <div class="provider-section"><h3>Your Team</h3><div id="providerAdminTeamList" class="list"></div></div>
+        <div class="provider-section">
+          <h3>Your Team</h3>
+          <div id="providerAdminTeamList" class="list"></div>
+          <div id="providerTeamManager" class="hidden" style="margin-top:14px">
+            <div class="notice">Provider owners can invite Admins, Editors, and Analysts. The invited person must sign in with the invited email address and accept the invitation.</div>
+            <div class="row" style="margin-top:12px">
+              <div><label>Email</label><input id="providerInviteEmail" type="email" placeholder="team@example.com" autocomplete="email"></div>
+              <div><label>Role</label><select id="providerInviteRole"><option value="admin">Admin</option><option value="editor">Editor</option><option value="analyst">Analyst</option></select></div>
+            </div>
+            <div class="actions"><button class="btn primary" id="providerInviteCreate" type="button">Create Invitation</button></div>
+            <div class="meta" id="providerInviteStatus" style="margin-top:8px"></div>
+            <h4 style="margin-bottom:8px">Pending Invitations</h4>
+            <div id="providerPendingInvitesList" class="list"></div>
+          </div>
+        </div>
         <div class="provider-section">
           <h3>Recognized Provider Content</h3>
           <div class="meta" style="margin-bottom:10px">This is the content Kinetosphere currently associates with this provider account. Editing tools will be added after ownership is verified.</div>
@@ -2149,6 +2168,8 @@ let providerMemberIds=new Set();
 let providerMembersByProvider=new Map();
 let providerTeamByProvider=new Map();
 let providerOwnedContentByProvider=new Map();
+let providerInvitesByProvider=new Map();
+let incomingProviderInvites=[];
 let providerAcquisitionRequestsByProvider=new Map();
 let selectedProviderId=null;
 let discoverSearchQuery="";
@@ -2253,7 +2274,7 @@ function isOwnerUser(){
 
 const PROVIDER_ROLE_CAPABILITIES={
   owner:new Set(["storefront:edit","media:edit","analytics:view","members:manage"]),
-  admin:new Set(["storefront:edit","media:edit","analytics:view","members:manage"]),
+  admin:new Set(["storefront:edit","media:edit","analytics:view"]),
   editor:new Set(["storefront:edit","media:edit"]),
   analyst:new Set(["analytics:view"])
 };
@@ -2432,6 +2453,57 @@ function renderProviderDetail(){
   host.querySelectorAll("[data-provider-edit]").forEach(btn=>btn.onclick=()=>openProviderStorefrontAdmin(btn.dataset.providerEdit));
 }
 
+
+function providerNameById(providerId){
+  return providerCatalog.find(p=>String(p.id)===String(providerId))?.name || "Provider";
+}
+function renderIncomingProviderInvites(){
+  const panel=el("providerInvitesPanel"), host=el("incomingProviderInvitesList");
+  if(!panel || !host) return;
+  const rows=cloudUser?incomingProviderInvites:[];
+  panel.classList.toggle("hidden",!rows.length);
+  host.innerHTML=rows.map(row=>\`<div class="item"><div class="item-head"><div><div class="name">\${escapeHtml(providerNameById(row.provider_id))}</div><div class="meta">Invited as \${escapeHtml(row.role)} · \${escapeHtml(row.email)}</div></div><span class="badge">Pending</span></div><div class="small-actions"><button class="btn good" type="button" data-provider-invite-accept="\${escapeHtml(row.id)}">Accept Invitation</button></div></div>\`).join("");
+  host.querySelectorAll("[data-provider-invite-accept]").forEach(btn=>btn.onclick=()=>acceptProviderInvite(btn.dataset.providerInviteAccept));
+}
+async function acceptProviderInvite(inviteId){
+  const {error}=await supabaseClient.rpc("accept_provider_invite",{p_invite_id:inviteId});
+  if(error){ alert("Invitation could not be accepted: "+error.message); return; }
+  await loadProviderAccessState();
+  showView("providerAdmin");
+}
+async function createProviderTeamInvite(providerId){
+  const email=String(el("providerInviteEmail")?.value||"").trim();
+  const role=String(el("providerInviteRole")?.value||"editor");
+  const status=el("providerInviteStatus");
+  if(!email || !email.includes("@")){ if(status) status.textContent="Enter a valid email address."; return; }
+  if(status) status.textContent="Creating invitation…";
+  const {error}=await supabaseClient.rpc("create_provider_invite",{p_provider_id:providerId,p_email:email,p_role:role});
+  if(error){ if(status) status.textContent="Could not create invitation: "+error.message; return; }
+  if(el("providerInviteEmail")) el("providerInviteEmail").value="";
+  if(status) status.textContent="Invitation created. The person can accept it after signing in with that email address.";
+  await loadProviderAccessState();
+  renderProviderAdminDashboard(providerId);
+}
+async function revokeProviderTeamInvite(inviteId,providerId){
+  const {error}=await supabaseClient.rpc("revoke_provider_invite",{p_invite_id:inviteId});
+  if(error){ alert("Invitation could not be revoked: "+error.message); return; }
+  await loadProviderAccessState();
+  renderProviderAdminDashboard(providerId);
+}
+async function changeProviderMemberRole(providerId,userId,role){
+  const {error}=await supabaseClient.rpc("update_provider_member_role",{p_provider_id:providerId,p_user_id:userId,p_role:role});
+  if(error){ alert("Team role could not be updated: "+error.message); return; }
+  await loadProviderAccessState();
+  renderProviderAdminDashboard(providerId);
+}
+async function removeProviderTeamMember(providerId,userId){
+  if(!confirm("Remove this person from the provider team?")) return;
+  const {error}=await supabaseClient.rpc("remove_provider_member",{p_provider_id:providerId,p_user_id:userId});
+  if(error){ alert("Team member could not be removed: "+error.message); return; }
+  await loadProviderAccessState();
+  renderProviderAdminDashboard(providerId);
+}
+
 function providerAdminProviders(){
   if(!cloudUser) return [];
   return providerCatalog
@@ -2466,13 +2538,29 @@ function renderProviderAdminDashboard(providerId){
   if(el("providerAdminExerciseCount")) el("providerAdminExerciseCount").textContent=String(ownedExercises.length);
   if(el("providerAdminAccessModel")) el("providerAdminAccessModel").textContent=String(active.access_model||"—");
 
+  const canManageTeam=providerCan(pid,"members:manage");
   const teamHost=el("providerAdminTeamList");
   if(teamHost){
     teamHost.innerHTML=team.length?team.map(row=>{
       const self=row.user_id===cloudUser?.id;
-      return \`<div class="item"><div class="item-head"><div><div class="name">\${self?"You":"Team member"}</div><div class="meta">\${escapeHtml(String(row.user_id).slice(0,8))}…</div></div><span class="badge">\${escapeHtml(row.role||"member")}</span></div></div>\`;
+      const role=String(row.role||"member");
+      const editable=canManageTeam && role!=="owner" && !self;
+      const controls=editable?\`<div class="small-actions"><select data-provider-member-role="\${escapeHtml(row.user_id)}"><option value="admin" \${role==="admin"?"selected":""}>Admin</option><option value="editor" \${role==="editor"?"selected":""}>Editor</option><option value="analyst" \${role==="analyst"?"selected":""}>Analyst</option></select><button class="btn danger" type="button" data-provider-member-remove="\${escapeHtml(row.user_id)}">Remove</button></div>\`:"";
+      return \`<div class="item"><div class="item-head"><div><div class="name">\${self?"You":"Team member"}</div><div class="meta">\${escapeHtml(String(row.user_id).slice(0,8))}…</div></div><span class="badge">\${escapeHtml(role)}</span></div>\${controls}</div>\`;
     }).join(""):'<div class="meta">No provider team members found.</div>';
+    teamHost.querySelectorAll("[data-provider-member-role]").forEach(sel=>sel.onchange=()=>changeProviderMemberRole(pid,sel.dataset.providerMemberRole,sel.value));
+    teamHost.querySelectorAll("[data-provider-member-remove]").forEach(btn=>btn.onclick=()=>removeProviderTeamMember(pid,btn.dataset.providerMemberRemove));
   }
+  const teamManager=el("providerTeamManager");
+  if(teamManager) teamManager.classList.toggle("hidden",!canManageTeam);
+  const pendingHost=el("providerPendingInvitesList");
+  if(pendingHost){
+    const pending=providerInvitesByProvider.get(pid)||[];
+    pendingHost.innerHTML=pending.length?pending.map(inv=>\`<div class="item"><div class="item-head"><div><div class="name">\${escapeHtml(inv.email)}</div><div class="meta">Invited as \${escapeHtml(inv.role)}</div></div><span class="badge">Pending</span></div><div class="small-actions"><button class="btn danger" type="button" data-provider-invite-revoke="\${escapeHtml(inv.id)}">Revoke</button></div></div>\`).join(""):'<div class="meta">No pending invitations.</div>';
+    pendingHost.querySelectorAll("[data-provider-invite-revoke]").forEach(btn=>btn.onclick=()=>revokeProviderTeamInvite(btn.dataset.providerInviteRevoke,pid));
+  }
+  const inviteBtn=el("providerInviteCreate");
+  if(inviteBtn) inviteBtn.dataset.providerId=pid;
 
   const contentHost=el("providerAdminContentList");
   if(contentHost){
@@ -2591,27 +2679,31 @@ function renderProviderAccessUI(){
   document.querySelectorAll("[data-provider-detail]").forEach(btn=>btn.onclick=()=>openProviderDetail(btn.dataset.providerDetail));
 }
 async function loadProviderAccessState(){
-  providerCatalog=[]; providerEntitlementIds=new Set(); providerEntitlementsByProvider=new Map(); providerMemberIds=new Set(); providerMembersByProvider=new Map(); providerTeamByProvider=new Map(); providerOwnedContentByProvider=new Map(); providerAcquisitionRequestsByProvider=new Map();
+  providerCatalog=[]; providerEntitlementIds=new Set(); providerEntitlementsByProvider=new Map(); providerMemberIds=new Set(); providerMembersByProvider=new Map(); providerTeamByProvider=new Map(); providerOwnedContentByProvider=new Map(); providerInvitesByProvider=new Map(); incomingProviderInvites=[]; providerAcquisitionRequestsByProvider=new Map();
   accessibleProviderSources=new Set();
   if(!cloudUser){
     // Guest mode intentionally keeps the current included catalog available.
     accessibleProviderSources=new Set(EXERCISE_SOURCES);
     renderProviderAccessUI();
+    renderIncomingProviderInvites();
     return;
   }
   try{
-    const [{data:providers,error:providerError},{data:storefronts,error:storefrontError},{data:entitlements,error:entitlementError},{data:members,error:memberError},{data:requests,error:requestError}]=await Promise.all([
+    const [{data:providers,error:providerError},{data:storefronts,error:storefrontError},{data:entitlements,error:entitlementError},{data:members,error:memberError},{data:requests,error:requestError},{data:incomingInvites,error:incomingInviteError}]=await Promise.all([
       supabaseClient.from("providers").select("id,slug,source_key,name,description,status,discoverable,free_sample_enabled,access_model").eq("status","active"),
       supabaseClient.from("provider_storefronts").select("provider_id,tagline,long_description,specialties,hero_media_url,hero_media_type,pricing_summary,pricing_details,website_url,social_url,featured_program_ids,featured_exercise_ids,sample_program_ids,sample_exercise_ids,updated_at"),
       supabaseClient.from("provider_entitlements").select("provider_id,status").eq("user_id",cloudUser.id),
       supabaseClient.from("provider_members").select("provider_id,role").eq("user_id",cloudUser.id),
-      supabaseClient.from("provider_acquisition_requests").select("provider_id,request_type,status,updated_at").eq("user_id",cloudUser.id)
+      supabaseClient.from("provider_acquisition_requests").select("provider_id,request_type,status,updated_at").eq("user_id",cloudUser.id),
+      supabaseClient.from("provider_invites").select("id,provider_id,email,role,status,created_at").eq("status","pending")
     ]);
     if(providerError) throw providerError;
     if(storefrontError) throw storefrontError;
     if(entitlementError) throw entitlementError;
     if(memberError) throw memberError;
     if(requestError) throw requestError;
+    if(incomingInviteError) throw incomingInviteError;
+    incomingProviderInvites=(incomingInvites||[]).filter(row=>String(row.email||"").toLowerCase()===String(cloudUser.email||"").toLowerCase());
     const storefrontMap=new Map((storefronts||[]).map(r=>[String(r.provider_id),r]));
     providerCatalog=(providers||[]).map(p=>({...p,...(storefrontMap.get(String(p.id))||{})}));
     providerEntitlementsByProvider=new Map((entitlements||[]).map(r=>[String(r.provider_id),r]));
@@ -2622,12 +2714,14 @@ async function loadProviderAccessState(){
 
     const managedProviderIds=(isAdminUser()?providerCatalog.map(p=>String(p.id)):[...providerMemberIds]).filter(Boolean);
     if(managedProviderIds.length){
-      const [{data:teamRows,error:teamError},{data:ownershipRows,error:ownershipError}]=await Promise.all([
+      const [{data:teamRows,error:teamError},{data:ownershipRows,error:ownershipError},{data:inviteRows,error:inviteError}]=await Promise.all([
         supabaseClient.from("provider_members").select("provider_id,user_id,role,created_at").in("provider_id",managedProviderIds),
-        supabaseClient.from("provider_content_ownership").select("provider_id,entity_type,entity_id,source").in("provider_id",managedProviderIds)
+        supabaseClient.from("provider_content_ownership").select("provider_id,entity_type,entity_id,source").in("provider_id",managedProviderIds),
+        supabaseClient.from("provider_invites").select("id,provider_id,email,role,status,created_at").in("provider_id",managedProviderIds).eq("status","pending")
       ]);
       if(teamError) throw teamError;
       if(ownershipError) throw ownershipError;
+      if(inviteError) throw inviteError;
       for(const row of (teamRows||[])){
         const key=String(row.provider_id);
         if(!providerTeamByProvider.has(key)) providerTeamByProvider.set(key,[]);
@@ -2637,6 +2731,11 @@ async function loadProviderAccessState(){
         const key=String(row.provider_id);
         if(!providerOwnedContentByProvider.has(key)) providerOwnedContentByProvider.set(key,[]);
         providerOwnedContentByProvider.get(key).push(row);
+      }
+      for(const row of (inviteRows||[])){
+        const key=String(row.provider_id);
+        if(!providerInvitesByProvider.has(key)) providerInvitesByProvider.set(key,[]);
+        providerInvitesByProvider.get(key).push(row);
       }
     }
     accessibleProviderSources=new Set();
@@ -2648,6 +2747,7 @@ async function loadProviderAccessState(){
     accessibleProviderSources=new Set();
   }
   renderProviderAccessUI();
+  renderIncomingProviderInvites();
   if(selectedProviderId) renderProviderDetail();
   renderProviderStorefrontAdmin();
   renderProviderAdminDashboard();
@@ -7814,6 +7914,7 @@ document.addEventListener("click",e=>{
   if(["nextBtn","prevBtn","timerStart","restartBtn"].includes(id)) nativeHaptic(id==="nextBtn"?"medium":"light");
 });
 
+if(el("providerInviteCreate")) el("providerInviteCreate").onclick=e=>{ const id=e.currentTarget.dataset.providerId; if(id) createProviderTeamInvite(id); };
 if(el("providerAdminSelect")) el("providerAdminSelect").onchange=e=>{
   renderProviderAdminDashboard(e.target.value);
   const p=providerCatalog.find(x=>String(x.id)===String(e.target.value));
