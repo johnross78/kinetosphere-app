@@ -1775,26 +1775,10 @@ html[data-theme="light"] .provider-hero-media{background:rgba(23,32,42,.04)}
           <div class="meta" style="margin-bottom:10px">This is the content Kinetosphere currently associates with this provider account. Editing tools will be added after ownership is verified.</div>
           <div id="providerAdminContentList" class="list"></div>
         </div>
-        <div class="actions" style="margin-top:16px">
-          <button class="btn secondary" id="providerAdminEditStorefront" type="button">Provider Page Editor (coming next)</button>
-          <button class="btn secondary" id="providerAdminViewPublic" type="button">View Provider Page</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="importerView" class="hidden">
-    <div class="panel">
-      <h2>Backend Provider Administration</h2>
-      <div class="notice">Administrative ingestion tools. This view is intentionally not linked in the user-facing navigation.</div>
-      <div class="provider-section" id="mediaHealthAdmin" style="margin-top:18px">
-        <div class="programs-header-row"><div><h2 style="margin:0">Media Health</h2><div class="meta" style="margin-top:5px">Tracks missing, stale, private, or otherwise unavailable provider media without silently substituting a different movement.</div></div><button class="btn secondary" id="refreshMediaHealth" type="button">Refresh</button></div>
-        <div class="provider-access-panel"><div class="provider-access-state"><strong>Open media issues</strong><span class="badge" id="mediaHealthCount">—</span></div><div id="mediaHealthList" class="list"><div class="meta">Open Admin to load media health.</div></div></div>
-      </div>
-      <div id="ownerImportTools">
-      <div id="providerStorefrontAdmin" style="margin-bottom:22px">
-        <h2>Provider Storefront Editor</h2>
-        <div class="notice">Provider owners/admins can manage the public-facing Discover page here. Provider access model, entitlement rules, and platform status remain Kinetosphere-controlled.</div>
+        <div class="provider-section" style="margin-top:18px">
+<div id="providerStorefrontAdmin" style="margin-bottom:22px">
+        <h3>Provider Page Editor</h3>
+        <div class="notice">Edit the public-facing Discover page for providers your account is allowed to manage. Provider access model, entitlement rules, and platform status remain Kinetosphere-controlled.</div>
         <div class="row" style="margin-top:12px">
           <div><label>Provider</label><select id="storefrontProviderSelect"></select></div>
           <div><label>Hero media type</label><select id="storefrontHeroType"><option value="image">Image</option><option value="video">Video</option></select></div>
@@ -1818,6 +1802,25 @@ html[data-theme="light"] .provider-hero-media{background:rgba(23,32,42,.04)}
         </div>
         <div class="meta" id="storefrontAdminStatus" style="margin-top:8px"></div>
       </div>
+      
+        </div>
+        <div class="actions" style="margin-top:16px">
+          <button class="btn secondary" id="providerAdminEditStorefront" type="button">Edit Provider Page</button>
+          <button class="btn secondary" id="providerAdminViewPublic" type="button">View Provider Page</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="importerView" class="hidden">
+    <div class="panel">
+      <h2>Kinetosphere Super Admin</h2>
+      <div class="notice">Platform-wide ingestion, media-health, and maintenance tools. Provider staff do not have access to this area.</div>
+      <div class="provider-section" id="mediaHealthAdmin" style="margin-top:18px">
+        <div class="programs-header-row"><div><h2 style="margin:0">Media Health</h2><div class="meta" style="margin-top:5px">Tracks missing, stale, private, or otherwise unavailable provider media without silently substituting a different movement.</div></div><button class="btn secondary" id="refreshMediaHealth" type="button">Refresh</button></div>
+        <div class="provider-access-panel"><div class="provider-access-state"><strong>Open media issues</strong><span class="badge" id="mediaHealthCount">—</span></div><div id="mediaHealthList" class="list"><div class="meta">Open Admin to load media health.</div></div></div>
+      </div>
+      <div id="ownerImportTools">
       <hr style="border:0;border-top:1px solid var(--border);margin:22px 0">
       <h2>YouTube Playlist Import</h2>
       <div class="notice">
@@ -2489,6 +2492,9 @@ function renderProviderAdminDashboard(providerId){
   }
   const viewBtn=el("providerAdminViewPublic");
   if(viewBtn) viewBtn.dataset.providerId=pid;
+  if(providerCanEditStorefront(active) && el("storefrontProviderSelect")){
+    fillProviderStorefrontForm(pid);
+  }
 }
 
 function providerCanEditStorefront(provider){
@@ -2529,7 +2535,8 @@ function openProviderStorefrontAdmin(providerId){
   if(!cloudUser) return;
   const p=providerCatalog.find(x=>String(x.id)===String(providerId));
   if(!providerCanEditStorefront(p)) return;
-  showView("importer");
+  showView("providerAdmin");
+  renderProviderAdminDashboard(providerId);
   renderProviderStorefrontAdmin();
   fillProviderStorefrontForm(providerId);
   setTimeout(()=>el("providerStorefrontAdmin")?.scrollIntoView({behavior:"smooth",block:"start"}),30);
@@ -7807,8 +7814,12 @@ document.addEventListener("click",e=>{
   if(["nextBtn","prevBtn","timerStart","restartBtn"].includes(id)) nativeHaptic(id==="nextBtn"?"medium":"light");
 });
 
-if(el("providerAdminSelect")) el("providerAdminSelect").onchange=e=>renderProviderAdminDashboard(e.target.value);
-if(el("providerAdminEditStorefront")) el("providerAdminEditStorefront").onclick=()=>alert("Provider Page editing will move into this Provider Admin workspace in the next step. The platform import tools remain Super Admin only.");
+if(el("providerAdminSelect")) el("providerAdminSelect").onchange=e=>{
+  renderProviderAdminDashboard(e.target.value);
+  const p=providerCatalog.find(x=>String(x.id)===String(e.target.value));
+  if(providerCanEditStorefront(p)) fillProviderStorefrontForm(e.target.value);
+};
+if(el("providerAdminEditStorefront")) el("providerAdminEditStorefront").onclick=e=>{ const id=e.currentTarget.dataset.providerId; if(id) openProviderStorefrontAdmin(id); };
 if(el("providerAdminViewPublic")) el("providerAdminViewPublic").onclick=e=>{ const id=e.currentTarget.dataset.providerId; if(id) openProviderDetail(id); };
 if(el("storefrontProviderSelect")) el("storefrontProviderSelect").onchange=e=>fillProviderStorefrontForm(e.target.value);
 if(el("saveProviderStorefront")) el("saveProviderStorefront").onclick=()=>saveProviderStorefront();
