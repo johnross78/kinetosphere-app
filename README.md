@@ -204,3 +204,10 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - Provider staff cannot enter the platform importer; attempts are redirected back to their Provider Admin workspace.
 - Provider page editing is intentionally marked as the next step rather than exposing the platform importer to providers.
 
+## Provider Readiness Phase 1 — provider storefront editor moved into Provider Admin
+- Moved the provider-facing storefront editor out of the Kinetosphere Super Admin/importer area and into the dedicated Provider Admin workspace.
+- Eligible provider owners/admins/editors can now update their own public Discover-page fields without seeing platform-wide ingestion or maintenance tools.
+- The Provider Admin provider selector and storefront editor stay synchronized, and the Edit Provider Page action now opens the in-workspace editor.
+- Kinetosphere Super Admin retains access to all providers through the same Provider Admin workspace, while the separate Super Admin area is now clearly reserved for platform-wide ingestion, media-health, and maintenance tools.
+- Existing provider-storefront RLS remains the server-side enforcement layer, so the UI move does not weaken provider isolation.
+
