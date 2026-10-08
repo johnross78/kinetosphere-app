@@ -211,3 +211,11 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - Kinetosphere Super Admin retains access to all providers through the same Provider Admin workspace, while the separate Super Admin area is now clearly reserved for platform-wide ingestion, media-health, and maintenance tools.
 - Existing provider-storefront RLS remains the server-side enforcement layer, so the UI move does not weaken provider isolation.
 
+## Provider Readiness Phase 1 — provider team management
+- Added secure provider-team invitations backed by Supabase.
+- Provider owners can create invitations for Admin, Editor, or Analyst roles; invited users must sign in with the invited email address and accept the invitation themselves.
+- Pending invitations appear on the invited user's Account screen and in the provider owner's team-management area.
+- Provider owners can revoke pending invitations, change non-owner team roles, and remove non-owner team members.
+- Provider Admin and Analyst roles cannot manage team membership; team-management authority is reserved for the provider owner (or Kinetosphere Super Admin).
+- Provider-team actions are enforced by server-side RPC permission checks, not just hidden UI controls.
+
