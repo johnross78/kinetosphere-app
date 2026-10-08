@@ -186,3 +186,14 @@ RC24 / v6.10.30: Between-round and between-set rest states are now authoritative
 - Super-admin checks now rely on account metadata (role=admin or the existing boolean admin flag), matching the database RLS policies already protecting provider/admin data.
 - This preserves current Kinetosphere administration while making future business-entity/admin account changes much cleaner.
 
+## Provider Readiness Phase 1 — provider ownership and team permissions
+- Added reusable database permission helpers for platform admin and provider-role capability checks.
+- Provider team visibility is now scoped so a provider can see only its own team unless the user is a Kinetosphere platform admin.
+- Added provider_content_ownership to bind exact exercises/programs/flows to exact provider accounts before outside providers are allowed to manage content.
+- Existing shared exercises with an unambiguous source_key match were mapped automatically: CrossFit 83, Eternal Fitness 554, Movement Journey 101, NASM 219, and Stack 52 793. OPEX legacy rows were intentionally left unmapped because their current shared-exercise records do not carry an unambiguous source field.
+- Provider content editing remains conservative until legacy ownership is verified; no ambiguous records were assigned by guesswork.
+
+## Potential development item — Camera Equipment Scan
+- Let a user scan a room with the phone camera to identify available workout equipment.
+- Convert recognized equipment into Builder / Smart Randomizer equipment filters, with user confirmation/editing before the scan affects workout generation.
+
