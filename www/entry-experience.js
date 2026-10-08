@@ -8,7 +8,7 @@
 
   function el(id){return document.getElementById(id);}
   function systemDark(){return !!window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;}
-  function entryLogoPath(){return systemDark()?"assets/brand/orbit-lockup-dark.svg":"assets/brand/orbit-lockup-light.svg";}
+  function entryLogoPath(){return systemDark()?"assets/brand/orbit-lockup-dark.svg":"assets/brand/orbit-lockup.svg";}
 
   function ensureHomeView(){
     if(el("homeView")) return;
@@ -85,7 +85,7 @@
     document.querySelectorAll("[data-mobile-view]").forEach(n=>n.classList.remove("active"));
     if(el("subtitle")) el("subtitle").textContent="Home";
     updateHome();
-    window.scrollTo({top:0,behavior:"instant"});
+    window.scrollTo({top:0,behavior:"auto"});
   };
 
   function buildWelcome(){
@@ -160,7 +160,7 @@
       signedInAtEntry=!!data?.session?.user;
     }catch(_){ signedInAtEntry=false; }
     const elapsed=performance.now()-entryStartedAt;
-    const earliestExit=900;
+    const earliestExit=5400;
     if(elapsed<earliestExit) await new Promise(r=>setTimeout(r,earliestExit-elapsed));
     if(splashAnimation){
       try{splashAnimation.goToAndPlay(324,true);}catch(_){}
