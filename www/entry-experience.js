@@ -51,19 +51,19 @@
     }
     section.querySelectorAll("[data-home-go]").forEach(btn=>btn.onclick=()=>{
       const view=btn.dataset.homeGo;
-      if(typeof window.showView==="function") window.showView(view);
+      if(typeof showView==="function") showView(view);
     });
   }
 
   function updateHome(){
     ensureHomeView();
-    const user=window.cloudUser||null;
+    const user=(typeof cloudUser!=="undefined"?cloudUser:null)||null;
     const badge=el("ksHomeAccountBadge");
     if(badge) badge.textContent=user?(user.email||"Signed in"):"Guest";
     const resume=el("ksResumeCard");
-    if(resume) resume.classList.toggle("hidden",!(window.activeCircuit?.items?.length));
+    if(resume) resume.classList.toggle("hidden",!((typeof activeCircuit!=="undefined"?activeCircuit:null)?.items?.length));
     const provider=el("ksProviderAdminCard");
-    if(provider) provider.classList.toggle("hidden",!(typeof window.canOpenProviderAdmin==="function" && window.canOpenProviderAdmin()));
+    if(provider) provider.classList.toggle("hidden",!(typeof canOpenProviderAdmin==="function" && canOpenProviderAdmin()));
     const primer=el("ksHomePrimer");
     const seen=localStorage.getItem(ENTRY_SEEN_KEY)==="1";
     if(primer) primer.classList.toggle("hidden",seen);
@@ -74,8 +74,8 @@
     ensureHomeView();
     const home=el("homeView");
     if(!home) return;
-    if(typeof window.teardownPlayerRuntime==="function" && document.body.classList.contains("player-active")){
-      try{window.teardownPlayerRuntime({stopTimers:true});}catch(_){}
+    if(typeof teardownPlayerRuntime==="function" && document.body.classList.contains("player-active")){
+      try{teardownPlayerRuntime({stopTimers:true});}catch(_){}
     }
     document.body.classList.remove("player-active");
     const known=["library","builder","programs","discover","providerDetail","account","preferences","profile","billing","support","about","providerAdmin","importer","player"];
@@ -116,15 +116,15 @@
     if(status) status.textContent=create?"Creating account…":"Signing in…";
     try{
       const result=create
-        ? await window.supabaseClient.auth.signUp({email,password})
-        : await window.supabaseClient.auth.signInWithPassword({email,password});
+        ? await supabaseClient.auth.signUp({email,password})
+        : await supabaseClient.auth.signInWithPassword({email,password});
       if(result.error) throw result.error;
       if(create && !result.data?.session){
         if(status) status.textContent="Account created. Check your email to confirm it, then sign in.";
         return;
       }
       signedInAtEntry=true;
-      if(typeof window.refreshCloudUser==="function") await window.refreshCloudUser();
+      if(typeof refreshCloudUser==="function") await refreshCloudUser();
       finishEntryToHome();
     }catch(err){
       if(status) status.textContent=(create?"Account could not be created: ":"Sign-in failed: ")+(err?.message||"Unknown error");
@@ -156,7 +156,7 @@
 
   async function resolveEntry(){
     try{
-      const {data}=await window.supabaseClient.auth.getSession();
+      const {data}=await supabaseClient.auth.getSession();
       signedInAtEntry=!!data?.session?.user;
     }catch(_){ signedInAtEntry=false; }
     const elapsed=performance.now()-entryStartedAt;
@@ -187,8 +187,8 @@
     document.body.classList.remove("entry-booting");
     document.body.style.overflow="";
     ensureHomeView();
-    if(signedInAtEntry && typeof window.refreshCloudUser==="function"){
-      try{await window.refreshCloudUser();}catch(_){}
+    if(signedInAtEntry && typeof refreshCloudUser==="function"){
+      try{await refreshCloudUser();}catch(_){}
     }
     showKinetosphereHome();
   }
@@ -211,5 +211,5 @@
   resolveEntry();
 
   // Keep Home current when auth changes after the entry screen.
-  window.supabaseClient?.auth?.onAuthStateChange?.(()=>setTimeout(updateHome,0));
+  supabaseClient?.auth?.onAuthStateChange?.(()=>setTimeout(updateHome,0));
 })();
