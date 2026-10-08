@@ -1,8 +1,8 @@
 {
   "name": "kinetosphere-mobile",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "private": true,
-  "description": "Kinetosphere iOS RC38: preserves the RC37 iPhone landscape viewport fix, prevents explicitly cleared active circuits from resurrecting after cold launch/cloud sync, and restores responsive muscle-group and prescription sizing in iPhone landscape; iPad unchanged; synchronized with web v6.10.44.",
+  "description": "Kinetosphere iOS RC39: adds branded Lottie splash, authentication entry, and the first Home dashboard while preserving the RC38 Player and provider-readiness foundation.",
   "scripts": {
     "postinstall": "node scripts/apply-player-layout.mjs",
     "cap:sync": "npx cap sync",
