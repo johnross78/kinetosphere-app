@@ -1219,3 +1219,99 @@ html.native-capacitor-shell body.player-set-rest-active #roundComplete{
     overflow:hidden!important;
   }
 }
+
+/* Build 46 diagnostic: native iPhone landscape only. Keep Build 44's column geometry.
+   The previous ribbon height increase could not help when inherited labels remained
+   desktop-sized. Limit typography and show actual nested video frame geometry. */
+@media (orientation: landscape) and (max-height:600px){
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .strip{
+    box-sizing:border-box!important;
+    height:65px!important;
+    min-height:65px!important;
+    max-height:65px!important;
+    padding:4px!important;
+    margin-top:4px!important;
+    overflow:hidden!important;
+  }
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .exercise-list{
+    box-sizing:border-box!important;
+    height:57px!important;
+    min-height:57px!important;
+    max-height:57px!important;
+    grid-auto-columns:minmax(0, min(31vw, 170px))!important;
+    gap:5px!important;
+    transform:none!important;
+    align-items:stretch!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+  }
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .exercise-list .exercise-item{
+    box-sizing:border-box!important;
+    height:55px!important;
+    min-height:55px!important;
+    max-height:55px!important;
+    overflow:hidden!important;
+    padding:4px 6px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    gap:1px!important;
+    justify-content:flex-start!important;
+  }
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .exercise-item .exercise-name{
+    box-sizing:border-box!important;
+    font-size:clamp(11px,2.4vh,15px)!important;
+    line-height:1.12!important;
+    font-weight:800!important;
+    margin:0!important;
+    max-height:34px!important;
+    overflow:hidden!important;
+    display:-webkit-box!important;
+    -webkit-box-orient:vertical!important;
+    -webkit-line-clamp:2;
+    overflow-wrap:anywhere!important;
+  }
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .exercise-item .exercise-meta{
+    font-size:10px!important;
+    line-height:1.1!important;
+    margin:0!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  /* Temporary diagnostics: visible colored edges show where the host
+     (cyan), YouTube bridge iframe (magenta) and outer card (yellow) sit.
+     Do not alter the overall stage/grid dimensions. */
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .video-card{
+    outline:2px solid #eab308!important;
+    outline-offset:-2px!important;
+  }
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView #ytFrame{
+    outline:2px solid #22d3ee!important;
+    outline-offset:-2px!important;
+    isolation:isolate!important;
+  }
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView #ytFrame>iframe[data-kinetosphere-youtube-bridge]{
+    outline:2px solid #d946ef!important;
+    outline-offset:-3px!important;
+    position:absolute!important;
+    inset:0!important;
+    left:0!important;
+    top:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:100%!important;
+    height:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    max-width:100%!important;
+    max-height:100%!important;
+    z-index:2!important;
+    pointer-events:auto!important;
+    touch-action:auto!important;
+    transform:none!important;
+  }
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .video-wrap{
+    touch-action:auto!important;
+  }
+}
