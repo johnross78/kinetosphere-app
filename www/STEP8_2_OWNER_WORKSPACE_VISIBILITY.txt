@@ -1,0 +1,1 @@
+Step 8.2: Include pending, RLS-authorized providers in signed-in provider catalog. Provider Admin still restricted to user memberships and platform admins; public Discover continues filtering by discoverable=true. No backend changes. Test in Preview first.

@@ -1,0 +1,5 @@
+Kinetosphere Step 8.4 - Provider Onboarding Release Candidate
+Source: tested Step 8.3 preview, with temporary provider visibility diagnostics removed.
+Preserved: pending/private Owner provider visibility fix, separation of critical membership/provider reads from optional data reads, onboarding review gate, Step 7 Resend email workflow.
+No Supabase migration needed for this frontend change.
+Deploy this ZIP to Cloudflare Preview first. Verify Owner account access, Storefront Editor, Team Management, cross-provider isolation, onboarding review, Circuit Builder and Player. Promote to production only after validation.
