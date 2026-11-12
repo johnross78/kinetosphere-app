@@ -1014,11 +1014,13 @@ html.native-capacitor-shell body.player-set-rest-active #roundComplete{
 }
 
 
-/* Build 43 — one viewport-contained iPhone landscape Player.
+/* Build 44 — repair iOS landscape oversized layout viewport.
    Column widths derive from actual available width, NEVER from content minimums
    or height-based video width plus a fixed-width info panel.
-   Scoped to native iPhone landscape only; desktop, iPad and portrait unaffected. */
-@media (orientation:landscape) and (max-width:950px) and (max-height:600px){
+   Scoped to native iPhone landscape only; desktop, iPad and portrait unaffected.
+   Important: do NOT gate by max-width, because the original .app min-width:1040px
+   can cause WKWebView to lay out at a desktop-sized CSS viewport. */
+@media (orientation:landscape) and (max-height:600px){
   html.native-capacitor-shell:not(.native-ipad-shell),
   html.native-capacitor-shell:not(.native-ipad-shell) body{
     max-width:100%!important;
