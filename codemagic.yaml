@@ -173,8 +173,6 @@ workflows:
         script: npm install --no-audit --no-fund
       - name: Activate isolated iOS Video Lab
         script: node scripts/activate-video-lab.mjs
-      - name: Apply Build 51 HTTPS player comparison
-        script: node scripts/apply-build51-youtube.mjs
       - name: Create and sync Capacitor iOS project
         script: |
           if [ ! -d ios ]; then
