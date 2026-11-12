@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Kinetosphere iOS Video Lab</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;background:#0d1117;color:#f8fafc;font-family:-apple-system,system-ui,sans-serif}
+#app{height:100dvh;width:100%;display:flex;flex-direction:column;padding:calc(6px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));gap:6px}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+header strong{font-size:14px}header span{font-size:10px;color:#facc15}
+nav{display:flex;flex-wrap:wrap;gap:5px}
+button{padding:7px 9px;border:1px solid #94a3b8;border-radius:6px;background:#192437;color:#fff;font:600 11px -apple-system,system-ui,sans-serif}
+button[aria-pressed="true"]{background:#2563eb;border-color:#93c5fd}
+main{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#stage{position:relative;flex:none;width:min(100%,calc((100dvh - 140px) * 16 / 9));max-height:100%;aspect-ratio:16 / 9;border:3px solid #f59e0b;background:#000;overflow:hidden}
+#frame{position:absolute;inset:0;border:0;width:100%;height:100%;margin:0;padding:0;display:block;background:#000;touch-action:auto;pointer-events:auto}
+#stage::after{content:"";pointer-events:none;position:absolute;inset:4px;border:2px solid #22d3ee;z-index:1}
+footer{flex:none;padding:4px 6px;background:#111827;border:1px solid #475569;border-radius:6px;display:flex;flex-direction:column;gap:3px}
+#metrics,#events{font:10px/1.35 ui-monospace,monospace;overflow-wrap:anywhere}
+#events{color:#94f2b0;max-height:30px;overflow:hidden}
+@media (max-height:440px){#app{gap:3px}nav button{padding:5px 7px;font-size:10px}header strong{font-size:12px}#stage{width:min(100%,calc((100dvh - 114px) * 16 / 9))}footer{padding:2px 5px}#events{max-height:14px}}
+</style>
+</head>
+<body>
+<div id="app">
+<header><strong>KINETOSPHERE • iOS VIDEO LAB</strong><span id="modeLabel">Isolated playback experiment</span></header>
+<nav id="modes">
+<button type="button" data-mode="bridge" aria-pressed="false">A · Production bridge</button>
+<button type="button" data-mode="simple" aria-pressed="false">B · Simple HTTPS</button>
+<button type="button" data-mode="nocookie" aria-pressed="false">C · No-cookie HTTPS</button>
+<button type="button" data-mode="direct" aria-pressed="false">D · Direct (may error 153)</button>
+<button type="button" id="refresh">Reload current</button>
+</nav>
+<main><div id="stage"><iframe id="frame" title="Video test player" allow="autoplay; encrypted-media; picture-in-picture; fullscreen; accelerometer; gyroscope" allowfullscreen webkitallowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></main>
+<footer><div id="metrics">Waiting for viewport geometry</div><div id="events">Start with A in portrait, rotate, then test controls and fullscreen.</div></footer>
+</div>
+<script>
+(() => {
+const id="aqz-KE-bpKQ";
+const frame=document.getElementById("frame");
+const modes={
+ bridge:{label:"A · Production v6 bridge",url:"https://circuitbuilder.rosshomegym.com/embed/youtube?id="+id+"&muted=1"},
+ simple:{label:"B · Simple HTTPS embed",url:"https://52-2.homegym-5ke.pages.dev/embed/youtube-simple?id="+id+"&muted=1"},
+ nocookie:{label:"C · Privacy-enhanced HTTPS",url:"https://52-2.homegym-5ke.pages.dev/embed/youtube-compat?mode=nocookie-inline&id="+id+"&muted=1"},
+ direct:{label:"D · Direct YouTube (Error 153 possible)",url:"https://www.youtube.com/embed/"+id+"?playsinline=1&controls=1&fs=1&autoplay=1&mute=1"}
+};
+let current="bridge";let loadCount=0;let events=[];
+const rect=el=>{const r=el.getBoundingClientRect();return [r.left,r.top,r.width,r.height].map(v=>Math.round(v)).join(",")};
+function log(s){events.unshift(new Date().toLocaleTimeString()+" "+s);events=events.slice(0,4);document.getElementById("events").textContent=events.join(" | ")}
+function metrics(){const vv=visualViewport;document.getElementById("metrics").textContent="KS LAB | "+current+" | inner "+innerWidth+"×"+innerHeight+" | visual "+(vv?Math.round(vv.width)+"×"+Math.round(vv.height)+" scale "+vv.scale.toFixed(2):"n/a")+" | page "+document.documentElement.scrollWidth+" | stage x,y,w,h "+rect(document.getElementById("stage"))+" | iframe "+rect(frame)+" | focus "+document.hasFocus();}
+function select(key){if(!modes[key])return;current=key;document.getElementById("modeLabel").textContent=modes[key].label;document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mode===key)));frame.removeAttribute("src");frame.src=modes[key].url+"&kslab="+(++loadCount);log("open "+key);metrics();}
+document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>select(b.dataset.mode)));
+document.getElementById("refresh").addEventListener("click",()=>select(current));
+frame.addEventListener("load",()=>log("iframe load "+current));
+addEventListener("resize",()=>{log("window resize");metrics()},{passive:true});
+addEventListener("orientationchange",()=>{log("orientation");metrics();setTimeout(metrics,500)},{passive:true});
+addEventListener("focus",()=>{log("focus");metrics()},{passive:true});
+addEventListener("blur",()=>{log("blur");metrics()},{passive:true});
+document.addEventListener("visibilitychange",()=>{log("visibility "+document.visibilityState);metrics()});
+visualViewport?.addEventListener("resize",metrics,{passive:true});
+setInterval(metrics,1200);
+select("bridge");
+})();
+</script>
+</body>
+</html>
