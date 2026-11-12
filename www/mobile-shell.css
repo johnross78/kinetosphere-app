@@ -986,3 +986,29 @@ html.native-capacitor-shell body.player-set-rest-active #roundComplete{
     min-height:42px!important;height:42px!important;padding:3px 5px!important;
   }
 }
+
+
+/* Step 9.1 — Restore Account access on narrow-screen mobile builds.
+   Bottom Settings opens Preferences; the existing topbar Settings menu contains Account.
+   Only show that menu button in the mobile topbar, without changing Player layout. */
+@media (max-width:760px){
+  body:not(.player-active) .topbar{position:sticky;padding-right:104px!important;min-height:calc(53px + env(safe-area-inset-top));}
+  body:not(.player-active) .topbar>.tabs{
+    display:block!important;position:absolute!important;right:8px!important;
+    top:calc(9px + env(safe-area-inset-top))!important;
+    width:auto!important;margin:0!important;padding:0!important;
+    overflow:visible!important;z-index:1401!important;
+  }
+  body:not(.player-active) .topbar>.tabs>.tab{display:none!important;}
+  body:not(.player-active) .topbar>.tabs>.settings-menu{display:block!important;}
+  body:not(.player-active) .topbar .settings-trigger{
+    display:block!important;min-height:36px!important;padding:7px 9px!important;
+    font-size:12px!important;line-height:1.2!important;
+  }
+  body:not(.player-active) .topbar .settings-dropdown{
+    position:absolute!important;top:calc(100% + 6px)!important;right:0!important;
+    max-height:min(76dvh,540px)!important;overflow-y:auto!important;
+    z-index:1450!important;
+  }
+  body:not(.player-active) .topbar .brand-logo{max-width:min(60vw,260px)!important;}
+}
