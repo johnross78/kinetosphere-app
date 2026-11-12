@@ -1195,3 +1195,27 @@ html.native-capacitor-shell body.player-set-rest-active #roundComplete{
     overscroll-behavior-x:contain!important;
   }
 }
+
+/* Build 45 — exercise ribbon text is no longer clipped mid-line.
+   Preserve horizontal-only exercise navigation; allow vertical space
+   for two-line movement labels and their prescription. */
+@media (orientation:landscape) and (max-height:600px){
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .strip{
+    height:77px!important;min-height:77px!important;
+    padding:4px!important;overflow:hidden!important;
+    margin-top:5px!important;
+  }
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .exercise-list{
+    height:69px!important;max-height:69px!important;
+    align-items:stretch!important;
+    overflow-x:auto!important;overflow-y:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .exercise-item,
+  html.native-capacitor-shell:not(.native-ipad-shell) body.player-active #playerView .exercise-list > *{
+    height:65px!important;min-height:65px!important;
+    padding:5px 6px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+  }
+}
