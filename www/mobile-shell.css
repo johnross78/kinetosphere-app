@@ -1318,22 +1318,8 @@ html.native-capacitor-shell body.player-set-rest-active #roundComplete{
 
 /* KS47 DIAGNOSTIC STYLESHEET — intentionally independent of device/media/native classes.
    This label must appear whenever #playerView is visible. */
-#playerView:not(.hidden)::before{
-  content:"KS47 CSS LOADED";
-  position:fixed!important;
-  top:calc(4px + env(safe-area-inset-top))!important;
-  left:50%!important;
-  transform:translateX(-50%)!important;
-  display:block!important;
-  width:max-content!important;
-  padding:3px 7px!important;
-  color:#000!important;
-  background:#facc15!important;
-  font:bold 11px/1.2 sans-serif!important;
-  border-radius:3px!important;
-  z-index:2147483647!important;
-  pointer-events:none!important;
-}
+/* Build 49: retired KS47 top label so frame metrics remain visible.
+   Existing colored outlines stay for context. */
 #playerView:not(.hidden) .video-card{
   outline:3px solid #facc15!important;
   outline-offset:-3px!important;
