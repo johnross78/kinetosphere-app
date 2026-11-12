@@ -76,34 +76,22 @@ function syncPlayerSize(){
   const s=bridgeSize();
   if(!(s.width>0&&s.height>0))return;
 
-  const targetRatio=16/9;
-  const boxRatio=s.width/s.height;
-  let width=s.width;
-  let height=s.height;
-
-  if(boxRatio>targetRatio){
-    width=s.width;
-    height=s.width/targetRatio;
-  }else{
-    height=s.height;
-    width=s.height*targetRatio;
-  }
-
-  player.setSize(Math.ceil(width),Math.ceil(height));
-
+  // Match the actual embed rectangle. Previous cover-mode and overscan
+  // expanded the inner YouTube frame beyond its host, clipping its UI.
+  const width=Math.round(s.width);
+  const height=Math.round(s.height);
+  player.setSize(width,height);
   const iframe=player.getIframe&&player.getIframe();
   if(iframe){
-    const horizontalOverscan=Math.max(10,Math.ceil(width*0.018));
-    const renderWidth=Math.ceil(width+horizontalOverscan*2);
     iframe.style.position='absolute';
-    iframe.style.width=renderWidth+'px';
-    iframe.style.height=Math.ceil(height)+'px';
-    iframe.style.maxWidth='none';
-    iframe.style.maxHeight='none';
-    iframe.style.left=(((s.width-width)/2)-horizontalOverscan)+'px';
-    iframe.style.top=((s.height-height)/2)+'px';
-    iframe.style.right='auto';
-    iframe.style.bottom='auto';
+    iframe.style.width='100%';
+    iframe.style.height='100%';
+    iframe.style.maxWidth='100%';
+    iframe.style.maxHeight='100%';
+    iframe.style.left='0';
+    iframe.style.top='0';
+    iframe.style.right='0';
+    iframe.style.bottom='0';
     iframe.style.margin='0';
     iframe.style.padding='0';
     iframe.style.border='0';
@@ -139,7 +127,7 @@ window.addEventListener('message',function(ev){
   return new Response(html, {
     status:200,
     headers:{
-      "X-Kinetosphere-YouTube-Bridge":"2026-10-06-v5",
+      "X-Kinetosphere-YouTube-Bridge":"2026-11-12-v6",
       "Content-Type":"text/html; charset=utf-8",
       "Cache-Control":"no-store",
       "Referrer-Policy":"strict-origin-when-cross-origin",
@@ -169,8 +157,8 @@ export default {
 
     if (url.pathname === "/api/bridge-version") {
       return json({
-        youtubeBridge:"2026-10-06-v5",
-        sizing:"youtube-iframe-horizontal-overscan",
+        youtubeBridge:"2026-11-12-v6",
+        sizing:"youtube-iframe-exact-fit",
         webBaseline:"v6.10.32-compatible"
       },200,{"Cache-Control":"no-store"});
     }
