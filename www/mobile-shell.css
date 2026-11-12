@@ -1315,3 +1315,34 @@ html.native-capacitor-shell body.player-set-rest-active #roundComplete{
     touch-action:auto!important;
   }
 }
+
+/* KS47 DIAGNOSTIC STYLESHEET — intentionally independent of device/media/native classes.
+   This label must appear whenever #playerView is visible. */
+#playerView:not(.hidden)::before{
+  content:"KS47 CSS LOADED";
+  position:fixed!important;
+  top:calc(4px + env(safe-area-inset-top))!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  display:block!important;
+  width:max-content!important;
+  padding:3px 7px!important;
+  color:#000!important;
+  background:#facc15!important;
+  font:bold 11px/1.2 sans-serif!important;
+  border-radius:3px!important;
+  z-index:2147483647!important;
+  pointer-events:none!important;
+}
+#playerView:not(.hidden) .video-card{
+  outline:3px solid #facc15!important;
+  outline-offset:-3px!important;
+}
+#playerView:not(.hidden) #ytFrame{
+  outline:3px solid #22d3ee!important;
+  outline-offset:-4px!important;
+}
+#playerView:not(.hidden) #ytFrame iframe{
+  outline:3px solid #e879f9!important;
+  outline-offset:-6px!important;
+}
