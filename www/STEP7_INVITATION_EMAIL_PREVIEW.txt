@@ -1,0 +1,16 @@
+Kinetosphere Step 7: provider invitation delivery preview
+
+Deployment target: Cloudflare Pages preview ONLY until tested.
+Backend prerequisite: send-provider-invite Edge Function and RESEND_API_KEY secret in Supabase.
+
+Changes: create provider invite then request authorized server-side Resend delivery; pending invitation list shows email status and Send email retry for unsent/failed delivery. Delivery is claimed transactionally server-side.
+
+Test checklist:
+1. Web opens and login/Player/Provider Admin work.
+2. Authorized provider admin creates a test invitation to a controlled address.
+3. Verify email arrival, provider name, role, sign-in link.
+4. Verify invitation acceptance and expected team role.
+5. Check failed-delivery status / retry and duplicate-send prevention.
+6. Verify unrelated provider cannot send.
+
+No production web deployment was performed while preparing this zip.

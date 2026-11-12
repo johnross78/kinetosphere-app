@@ -1,0 +1,7 @@
+Kinetosphere Step 8 Provider Onboarding Preview
+Derived from verified Step 7 production ZIP.
+Changes: Account application, Super Admin review list, server-side application / approval RPCs.
+Supabase backend migration step8_provider_onboarding_review_gate already applied.
+IMPORTANT: Deploy only to a NEW Cloudflare Pages PREVIEW branch/environment, not production.
+Approval creates a private status=pending provider and owner membership, NOT a public listing.
+Do not use real outside providers until form, RLS and admin review tests pass.

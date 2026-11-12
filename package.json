@@ -1,14 +1,14 @@
 {
   "name": "kinetosphere-mobile",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "private": true,
-  "description": "Kinetosphere iOS RC39: adds branded Lottie splash, authentication entry, and the first Home dashboard while preserving the RC38 Player and provider-readiness foundation.",
+  "description": "Kinetosphere Step 9 native sync candidate: includes tested Step 8.4 web app; pending device validation.",
   "scripts": {
-    "postinstall": "node scripts/apply-player-layout.mjs",
     "cap:sync": "npx cap sync",
     "cap:add:ios": "npx cap add ios",
     "cap:open:ios": "npx cap open ios",
-    "cap:open:android": "npx cap open android"
+    "cap:open:android": "npx cap open android",
+    "legacy:apply-rc38-layout": "node scripts/apply-player-layout.mjs"
   },
   "dependencies": {
     "@capacitor/core": "8.0.0",
