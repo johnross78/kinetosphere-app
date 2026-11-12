@@ -150,3 +150,88 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
+
+  ios-video-lab-testflight:
+    name: Kinetosphere iOS Video Lab (Internal Only)
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Kinetosphere App Store Connect
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.kinetosphere.app
+      vars:
+        APP_STORE_APPLE_ID: "6816505375"
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+      node: v22.11.0
+      xcode: 26.5
+      cocoapods: default
+    scripts:
+      - name: Install dependencies
+        script: npm install --no-audit --no-fund
+      - name: Activate isolated iOS Video Lab
+        script: node scripts/activate-video-lab.mjs
+      - name: Apply Build 51 HTTPS player comparison
+        script: node scripts/apply-build51-youtube.mjs
+      - name: Create and sync Capacitor iOS project
+        script: |
+          if [ ! -d ios ]; then
+            npx cap add ios
+          fi
+          npx cap sync ios
+          APPICON_DIR="$CM_BUILD_DIR/ios/App/App/Assets.xcassets/AppIcon.appiconset"
+          mkdir -p "$APPICON_DIR"
+          cp "$CM_BUILD_DIR/resources/icon.png" "$APPICON_DIR/AppIcon-512@2x.png"
+          cat > "$APPICON_DIR/Contents.json" <<'JSON'
+          {
+            "images" : [
+              {
+                "filename" : "AppIcon-512@2x.png",
+                "idiom" : "universal",
+                "platform" : "ios",
+                "size" : "1024x1024"
+              }
+            ],
+            "info" : {
+              "author" : "xcode",
+              "version" : 1
+            }
+          }
+          JSON
+          /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" ios/App/App/Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" ios/App/App/Info.plist
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID")
+          NEXT_BUILD_NUMBER=$((LATEST_BUILD_NUMBER + 1))
+          echo "Latest TestFlight build: $LATEST_BUILD_NUMBER"
+          echo "Using build number: $NEXT_BUILD_NUMBER"
+          cd ios/App
+          agvtool new-version -all "$NEXT_BUILD_NUMBER"
+          cd "$CM_BUILD_DIR"
+      - name: Validate generated Xcode project
+        script: |
+          set -euo pipefail
+          xcodebuild -version
+          test -f "$CM_BUILD_DIR/$XCODE_PROJECT/project.pbxproj"
+          xcodebuild \
+            -project "$CM_BUILD_DIR/$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Release \
+            -showBuildSettings
+      - name: Apply App Store provisioning profiles
+        script: |
+          xcode-project use-profiles --custom-export-options='{"testFlightInternalTestingOnly": true}'
+      - name: Build signed IPA
+        script: |
+          xcode-project build-ipa \
+            --project "$CM_BUILD_DIR/$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - ios/App/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+    publishing:
+      app_store_connect:
+        auth: integration
