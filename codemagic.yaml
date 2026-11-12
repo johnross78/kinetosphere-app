@@ -10,8 +10,8 @@ workflows:
     scripts:
       - name: Install dependencies
         script: npm install --no-audit --no-fund
-      - name: Add Build 49 iPhone Player diagnostics
-        script: node scripts/apply-ks49-diagnostics.mjs
+      - name: Apply Build 50 iPhone direct YouTube test
+        script: node scripts/apply-build50-youtube.mjs
       - name: Create and sync Capacitor iOS project
         script: |
           if [ ! -d ios ]; then
@@ -88,8 +88,8 @@ workflows:
     scripts:
       - name: Install dependencies
         script: npm install --no-audit --no-fund
-      - name: Add Build 49 iPhone Player diagnostics
-        script: node scripts/apply-ks49-diagnostics.mjs
+      - name: Apply Build 50 iPhone direct YouTube test
+        script: node scripts/apply-build50-youtube.mjs
       - name: Create and sync Capacitor iOS project
         script: |
           if [ ! -d ios ]; then
