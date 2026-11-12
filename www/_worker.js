@@ -137,6 +137,21 @@ window.addEventListener('message',function(ev){
   });
 }
 
+// Build 51: static YouTube iframe hosted under the app's HTTPS domain.
+function youtubeSimplePage(requestUrl) {
+  const url = new URL(requestUrl);
+  const id = String(url.searchParams.get('id') || '').trim();
+  if (!/^[A-Za-z0-9_-]{11}$/.test(id)) {
+    return new Response('Invalid YouTube video ID', {status:400, headers:{'Content-Type':'text/plain; charset=utf-8'}});
+  }
+  const muted = url.searchParams.get('muted') === '1';
+  const origin = url.origin;
+  const embed = new URL('https://www.youtube.com/embed/' + encodeURIComponent(id));
+  for (const [key,value] of Object.entries({playsinline:'1',controls:'1',fs:'1',autoplay:'1',rel:'0',loop:'1',playlist:id,mute:muted?'1':'0',origin})) embed.searchParams.set(key,value);
+  const html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="strict-origin-when-cross-origin"><style>html,body{margin:0;padding:0;width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;background:#000}#video{box-sizing:border-box;position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;display:block;border:0}</style></head><body><iframe id="video" src="'+embed.toString().replace(/&/g,'&amp;')+'" title="YouTube video" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media; picture-in-picture; fullscreen; accelerometer; gyroscope" allowfullscreen webkitallowfullscreen></iframe></body></html>';
+  return new Response(html,{status:200,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'strict-origin-when-cross-origin','X-Content-Type-Options':'nosniff','X-Kinetosphere-YouTube-Bridge':'2026-11-12-v7-simple','Content-Security-Policy':"default-src 'none'; frame-src https://www.youtube.com https://www.youtube-nocookie.com; style-src 'unsafe-inline';"}});
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -150,6 +165,8 @@ export default {
         "Access-Control-Max-Age":"86400"
       }});
     }
+
+    if (url.pathname === "/embed/youtube-simple") return youtubeSimplePage(request.url);
 
     if (url.pathname === "/embed/youtube") {
       return youtubeEmbedPage(request.url);
