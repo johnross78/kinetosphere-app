@@ -25,6 +25,7 @@
         </div>
         <div class="notice ks-home-primer" id="ksHomePrimer"><strong>Get started:</strong> Build your own workout, launch a provider program, or discover another movement source. Kinetosphere keeps provider content distinct while bringing it into one training experience.</div>
         <div class="ks-home-grid">
+          <div class="ks-home-card"><div><h3>Account &amp; Sign In</h3><p>Sign in to sync your workouts, access subscribed providers, or manage your account.</p></div><button class="btn primary" type="button" data-home-go="account">Open Account</button></div>
           <div class="ks-home-card"><div><h3>Build a Workout</h3><p>Create a circuit yourself or let Smart Randomize build from your filters and available equipment.</p></div><button class="btn primary" type="button" data-home-go="builder">Build Workout</button></div>
           <div class="ks-home-card"><div><h3>Programs & Flows</h3><p>Browse structured content from the providers available to your account.</p></div><button class="btn secondary" type="button" data-home-go="programs">Explore Programs</button></div>
           <div class="ks-home-card"><div><h3>Discover Providers</h3><p>Explore provider pages, free samples, and new sources of training content.</p></div><button class="btn secondary" type="button" data-home-go="discover">Discover</button></div>
@@ -43,6 +44,19 @@
       btn.textContent="Home";
       tabs.insertBefore(btn,tabs.firstChild);
       btn.onclick=()=>showKinetosphereHome();
+    }
+    // Mobile Settings opens Preferences while login lives on Account.
+    const preferences=el("preferencesView")?.querySelector(".panel");
+    if(preferences && !el("ksMobileAccountShortcut")){
+      const shortcut=document.createElement("div");
+      shortcut.id="ksMobileAccountShortcut";
+      shortcut.className="provider-access-panel";
+      shortcut.style.cssText="margin:10px 0 16px;padding:14px";
+      shortcut.innerHTML='<div class="provider-access-state"><strong>Account &amp; Sign In</strong></div><p class="meta">Sign in, sign out, and manage your connected providers and invitations.</p><button class="btn primary" type="button" id="ksOpenAccountFromSettings">Open Account / Sign In</button>';
+      const heading=preferences.querySelector("h2");
+      if(heading) heading.insertAdjacentElement("afterend",shortcut);
+      else preferences.prepend(shortcut);
+      shortcut.querySelector("button").addEventListener("click",()=>{ if(typeof showView==="function") showView("account"); });
     }
     const logo=el("brandLogo");
     if(logo){
