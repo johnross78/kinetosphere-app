@@ -1,0 +1,25 @@
+// Step 10: build-only Player refinements and iPad video-safe countdown audio.
+import fs from "node:fs";
+const path="www/index.html";
+let html=fs.readFileSync(path,"utf8");
+if(html.includes('id="ks-step10-player-refinements"'))throw Error("Step 10 already applied");
+function replaceOnce(before,after){
+ const index=html.indexOf(before);
+ if(index<0||html.indexOf(before,index+before.length)>=0)throw Error("Expected one anchor: "+before.slice(0,80));
+ html=html.replace(before,after);
+}
+function replaceBetween(from,to,replacement){
+ const i=html.indexOf(from),j=html.indexOf(to,i+from.length);
+ if(i<0||j<0||html.indexOf(from,i+from.length)>=0)throw Error("Unexpected Player function boundaries: "+from);
+ html=html.slice(0,i)+replacement+html.slice(j);
+}
+replaceBetween("async function unlockCountdownAudio(){","function prewarmCountdownAudio(){","async function unlockCountdownAudio(){\n  // iPadOS: Audio elements used for cue prewarming can steal playback focus\n  // from YouTube's WKWebView. Only unlock this dedicated Web Audio context.\n  try{\n    const ctx=ensureCountdownAudio();\n    if(!ctx) return false;\n    if(ctx.state!==\"running\") await ctx.resume();\n    countdownAudioUnlocked=ctx.state===\"running\";\n    return countdownAudioUnlocked;\n  }catch(e){return false;}\n}\nfunction prewarmCountdownAudio(){\n  // Deliberately do not play/pause any HTMLAudio media at T-11.\n  // All cue oscillators use the context unlocked by START TIMER.\n}\n");
+// The prior prewarm function would call unlock again from the timer interval.
+replaceOnce("function prewarmCountdownAudio(){ unlockCountdownAudio().catch(()=>{}); }","");
+replaceBetween("function beepCountdown(finalCue=false){","function stopRoundRestTimer(){","function beepCountdown(finalCue=false){\n  // No HTMLAudio play/pause on Apple touch devices: WebKit treats those\n  // media elements as competing playback sources with embedded YouTube.\n  try{\n    const ctx=ensureCountdownAudio();\n    if(ctx && ctx.state===\"running\"){\n      const osc=ctx.createOscillator(), gain=ctx.createGain();\n      const duration=finalCue?0.30:0.15;\n      osc.type=\"sine\";\n      osc.frequency.value=finalCue?1760:880;\n      gain.gain.setValueAtTime(0.0001,ctx.currentTime);\n      gain.gain.exponentialRampToValueAtTime(finalCue?0.22:0.18,ctx.currentTime+0.01);\n      gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+duration-0.01);\n      osc.connect(gain);gain.connect(ctx.destination);\n      osc.start();osc.stop(ctx.currentTime+duration);\n      return;\n    }\n  }catch(e){console.warn(\"Countdown Web Audio unavailable\",e);}\n  // Do not fall back to HTMLAudio on iPad/iPhone: a missed cue is safer\n  // than interrupting the workout video. Desktop retains its fallback.\n  if(!isAppleTouchWebKit())playPersistentCountdownCue(finalCue);\n}\n");
+replaceOnce('    name==="importer"?"Backend provider administration":\n    (activeCircuit?', '    name==="importer"?"Backend provider administration":\n    name==="player"?"":\n    (activeCircuit?');
+replaceOnce('<button class="closex" id="closeModal">✕</button>','<button class="closex" id="closeModal" type="button" aria-label="Close movement details" title="Close movement details">✕</button>');
+replaceOnce('  el("descriptionModal").classList.remove("hidden");\n}', '  el("descriptionModal").classList.remove("hidden");\n  const card=el("descriptionModal")?.querySelector(".modal-card");\n  if(card)card.scrollTop=0;\n}');
+replaceOnce("</body>","<style id=\"ks-step10-player-refinements\">\n#playerView #exerciseList .exercise-item{\n  display:grid!important;\n  grid-template-rows:auto auto;\n  align-content:center!important;\n  justify-content:center!important;\n  justify-items:center!important;\n  text-align:center!important;\n  gap:3px;\n  box-sizing:border-box;\n  min-height:74px;\n}\n#playerView #exerciseList .exercise-item .exercise-name,\n#playerView #exerciseList .exercise-item .exercise-meta{\n  width:100%;\n  margin:0;\n  text-align:center!important;\n  align-self:center;\n}\n#descriptionModal .modal-card{position:relative}\n#descriptionModal .modal-head{\n  position:sticky;\n  top:0;\n  z-index:5;\n  align-items:center;\n  background:rgba(22,27,34,.98);\n  padding:4px 2px 10px;\n}\n#descriptionModal #closeModal{\n  display:flex!important;\n  align-items:center;\n  justify-content:center;\n  flex:0 0 44px;\n  width:44px!important;\n  height:44px!important;\n  min-width:44px;\n  min-height:44px;\n  margin-left:auto;\n  border:2px solid rgba(255,255,255,.62);\n  border-radius:999px;\n  background:#303b4b;\n  color:#fff;\n  font-size:24px;\n  font-weight:800;\n  line-height:1;\n  opacity:1;\n  cursor:pointer;\n}\n#descriptionModal #closeModal:focus-visible{outline:3px solid #64b5ff;outline-offset:2px}\n#descriptionModal .modal-card{overscroll-behavior:contain}\n</style>"+"\n</body>");
+fs.writeFileSync(path,html);
+console.log("Step 10: WebAudio-only Apple timer cues, centered movement tiles, close X and clean Player subtitle");
