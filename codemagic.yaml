@@ -359,9 +359,18 @@ workflows:
           /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" ios/App/App/Info.plist 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" ios/App/App/Info.plist
           LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID")
+          if ! [[ "$LATEST_BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "Invalid latest TestFlight build number: $LATEST_BUILD_NUMBER"
+            exit 1
+          fi
           NEXT_BUILD_NUMBER=$((LATEST_BUILD_NUMBER + 1))
-          echo "Latest TestFlight build: $LATEST_BUILD_NUMBER"
-          echo "Using build number: $NEXT_BUILD_NUMBER"
+          # Apple's uploader has already rejected 51 as used even when
+          # the latest-TestFlight lookup has not yet observed that upload.
+          if [ "$NEXT_BUILD_NUMBER" -lt 52 ]; then
+            NEXT_BUILD_NUMBER=52
+          fi
+          echo "Latest TestFlight build reported by API: $LATEST_BUILD_NUMBER"
+          echo "Using build number (minimum 52): $NEXT_BUILD_NUMBER"
           cd ios/App
           agvtool new-version -all "$NEXT_BUILD_NUMBER"
           cd "$CM_BUILD_DIR"
