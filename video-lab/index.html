@@ -61,7 +61,7 @@ let current="bridge";let loadCount=0;let events=[];let shell=false;
 const minimal=document.getElementById("stage"), shellStage=document.getElementById("shellStage"), target=document.getElementById("ytFrame"), toggle=document.getElementById("shellToggle"), shellStyles=document.getElementById("shellStyles");
 const rect=el=>{const r=el.getBoundingClientRect();return [r.left,r.top,r.width,r.height].map(v=>Math.round(v)).join(",")};
 function log(s){events.unshift(new Date().toLocaleTimeString()+" "+s);events=events.slice(0,4);document.getElementById("events").textContent=events.join(" | ")}
-function metrics(){const vv=visualViewport;document.getElementById("metrics").textContent="KS LAB | "+current+" / "+(shell?"PLAYER SHELL":"MINIMAL")" | inner "+innerWidth+"×"+innerHeight+" | visual "+(vv?Math.round(vv.width)+"×"+Math.round(vv.height)+" scale "+vv.scale.toFixed(2):"n/a")+" | page "+document.documentElement.scrollWidth+" | stage x,y,w,h "+rect(shell?shellStage:minimal)+" | iframe "+rect(frame)+" | focus "+document.hasFocus();}
+function metrics(){const vv=visualViewport;document.getElementById("metrics").textContent="KS LAB | "+current+" / "+(shell?"PLAYER SHELL":"MINIMAL")+" | inner "+innerWidth+"×"+innerHeight+" | visual "+(vv?Math.round(vv.width)+"×"+Math.round(vv.height)+" scale "+vv.scale.toFixed(2):"n/a")+" | page "+document.documentElement.scrollWidth+" | stage x,y,w,h "+rect(shell?shellStage:minimal)+" | iframe "+rect(frame)+" | focus "+document.hasFocus();}
 function setShell(value){
  shell=!!value;
  shellStyles.disabled=!shell;
