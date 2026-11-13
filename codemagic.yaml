@@ -400,3 +400,174 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
+
+  ios-native-circuit-integration-simulator:
+    name: Kinetosphere Native Circuit Integration Simulator
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      node: v22.11.0
+      xcode: 26.5
+      cocoapods: default
+    scripts:
+      - name: Install dependencies
+        script: npm install --no-audit --no-fund
+      - name: Apply Build 51 HTTPS player comparison
+        script: node scripts/apply-build51-youtube.mjs
+      - name: Inject isolated Circuit Player native message bridge
+        script: node scripts/activate-native-circuit-bridge.mjs
+      - name: Create and sync Capacitor iOS project
+        script: |
+          if [ ! -d ios ]; then
+            npx cap add ios
+          fi
+          npx cap sync ios
+          node scripts/activate-native-circuit-controller.mjs
+          APPICON_DIR="$CM_BUILD_DIR/ios/App/App/Assets.xcassets/AppIcon.appiconset"
+          mkdir -p "$APPICON_DIR"
+          cp "$CM_BUILD_DIR/resources/icon.png" "$APPICON_DIR/AppIcon-512@2x.png"
+          cat > "$APPICON_DIR/Contents.json" <<'JSON'
+          {
+            "images" : [
+              {
+                "filename" : "AppIcon-512@2x.png",
+                "idiom" : "universal",
+                "platform" : "ios",
+                "size" : "1024x1024"
+              }
+            ],
+            "info" : {
+              "author" : "xcode",
+              "version" : 1
+            }
+          }
+          JSON
+          echo "Generated iOS project:"
+          find "$CM_BUILD_DIR/ios/App" -maxdepth 2 -type d \( -name "*.xcodeproj" -o -name "*.xcworkspace" \) -print
+      - name: Validate generated Xcode project
+        script: |
+          set -euo pipefail
+          xcodebuild -version
+          test -f "$CM_BUILD_DIR/ios/App/App.xcodeproj/project.pbxproj"
+          xcodebuild \
+            -project "$CM_BUILD_DIR/ios/App/App.xcodeproj" \
+            -scheme App \
+            -configuration Debug \
+            -showBuildSettings
+      - name: Build unsigned simulator app
+        script: |
+          set -o pipefail
+          xcodebuild \
+            -project "$CM_BUILD_DIR/ios/App/App.xcodeproj" \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath "$CM_BUILD_DIR/build-simulator" \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee "$CM_BUILD_DIR/native-video-lab-xcode.log" || {
+              echo "==== FIRST SWIFT COMPILER ERRORS ===="
+              grep -n -m 15 -E 'error:|fatal error:' "$CM_BUILD_DIR/native-video-lab-xcode.log" || true
+              exit 1
+            }
+      - name: Package simulator app
+        script: |
+          cd "$CM_BUILD_DIR/build-simulator/Build/Products/Debug-iphonesimulator"
+          ditto -c -k --sequesterRsrc --keepParent App.app "$CM_BUILD_DIR/Kinetosphere-Simulator.app.zip"
+    artifacts:
+      - Kinetosphere-Simulator.app.zip
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
+
+  ios-native-circuit-integration-testflight:
+    name: Kinetosphere Native Circuit Integration (Internal Only)
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Kinetosphere App Store Connect
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.kinetosphere.app
+      vars:
+        APP_STORE_APPLE_ID: "6816505375"
+        APP_STORE_CONNECT_ALTOOL_ADDITIONAL_ARGUMENTS: "--use-old-altool"
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+      node: v22.11.0
+      xcode: 26.5
+      cocoapods: default
+    scripts:
+      - name: Install dependencies
+        script: npm install --no-audit --no-fund
+      - name: Inject isolated Circuit Player native message bridge
+        script: node scripts/activate-native-circuit-bridge.mjs
+      - name: Create and sync Capacitor iOS project
+        script: |
+          if [ ! -d ios ]; then
+            npx cap add ios
+          fi
+          npx cap sync ios
+          node scripts/activate-native-circuit-controller.mjs
+          APPICON_DIR="$CM_BUILD_DIR/ios/App/App/Assets.xcassets/AppIcon.appiconset"
+          mkdir -p "$APPICON_DIR"
+          cp "$CM_BUILD_DIR/resources/icon.png" "$APPICON_DIR/AppIcon-512@2x.png"
+          cat > "$APPICON_DIR/Contents.json" <<'JSON'
+          {
+            "images" : [
+              {
+                "filename" : "AppIcon-512@2x.png",
+                "idiom" : "universal",
+                "platform" : "ios",
+                "size" : "1024x1024"
+              }
+            ],
+            "info" : {
+              "author" : "xcode",
+              "version" : 1
+            }
+          }
+          JSON
+          /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" ios/App/App/Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" ios/App/App/Info.plist
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID")
+          if ! [[ "$LATEST_BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "Invalid latest TestFlight build number: $LATEST_BUILD_NUMBER"
+            exit 1
+          fi
+          NEXT_BUILD_NUMBER=$((LATEST_BUILD_NUMBER + 1))
+          # Apple's uploader has already rejected 51 as used even when
+          # the latest-TestFlight lookup has not yet observed that upload.
+          if [ "$NEXT_BUILD_NUMBER" -lt 52 ]; then
+            NEXT_BUILD_NUMBER=52
+          fi
+          echo "Latest TestFlight build reported by API: $LATEST_BUILD_NUMBER"
+          echo "Using build number (minimum 52): $NEXT_BUILD_NUMBER"
+          cd ios/App
+          agvtool new-version -all "$NEXT_BUILD_NUMBER"
+          cd "$CM_BUILD_DIR"
+      - name: Validate generated Xcode project
+        script: |
+          set -euo pipefail
+          xcodebuild -version
+          test -f "$CM_BUILD_DIR/$XCODE_PROJECT/project.pbxproj"
+          xcodebuild \
+            -project "$CM_BUILD_DIR/$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Release \
+            -showBuildSettings
+      - name: Apply App Store provisioning profiles
+        script: |
+          xcode-project use-profiles --custom-export-options='{"testFlightInternalTestingOnly": true}'
+      - name: Build signed IPA
+        script: |
+          xcode-project build-ipa \
+            --project "$CM_BUILD_DIR/$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - ios/App/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+    publishing:
+      app_store_connect:
+        auth: integration
