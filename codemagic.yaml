@@ -287,6 +287,7 @@ workflows:
             -showBuildSettings
       - name: Build unsigned simulator app
         script: |
+          set -o pipefail
           xcodebuild \
             -project "$CM_BUILD_DIR/ios/App/App.xcodeproj" \
             -scheme App \
@@ -294,7 +295,11 @@ workflows:
             -sdk iphonesimulator \
             -derivedDataPath "$CM_BUILD_DIR/build-simulator" \
             CODE_SIGNING_ALLOWED=NO \
-            build
+            build 2>&1 | tee "$CM_BUILD_DIR/native-video-lab-xcode.log" || {
+              echo "==== FIRST SWIFT COMPILER ERRORS ===="
+              grep -n -m 15 -E 'error:|fatal error:' "$CM_BUILD_DIR/native-video-lab-xcode.log" || true
+              exit 1
+            }
       - name: Package simulator app
         script: |
           cd "$CM_BUILD_DIR/build-simulator/Build/Products/Debug-iphonesimulator"
