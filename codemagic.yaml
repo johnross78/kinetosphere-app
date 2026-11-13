@@ -321,6 +321,7 @@ workflows:
         bundle_identifier: com.kinetosphere.app
       vars:
         APP_STORE_APPLE_ID: "6816505375"
+        APP_STORE_CONNECT_ALTOOL_ADDITIONAL_ARGUMENTS: "--use-old-altool"
         XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
       node: v22.11.0
