@@ -537,11 +537,11 @@ workflows:
           NEXT_BUILD_NUMBER=$((LATEST_BUILD_NUMBER + 1))
           # Apple's uploader has already rejected 51 as used even when
           # the latest-TestFlight lookup has not yet observed that upload.
-          if [ "$NEXT_BUILD_NUMBER" -lt 55 ]; then
-            NEXT_BUILD_NUMBER=55
+          if [ "$NEXT_BUILD_NUMBER" -lt 56 ]; then
+            NEXT_BUILD_NUMBER=56
           fi
           echo "Latest TestFlight build reported by API: $LATEST_BUILD_NUMBER"
-          echo "Using build number (minimum 55): $NEXT_BUILD_NUMBER"
+          echo "Using build number (minimum 56): $NEXT_BUILD_NUMBER"
           cd ios/App
           agvtool new-version -all "$NEXT_BUILD_NUMBER"
           cd "$CM_BUILD_DIR"
