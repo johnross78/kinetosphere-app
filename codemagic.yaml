@@ -12,6 +12,8 @@ workflows:
         script: npm install --no-audit --no-fund
       - name: Apply tested Build 56 native Circuit Player web bridge
         script: node scripts/activate-native-circuit-bridge.mjs
+      - name: Apply Step 10 iPad timer and Player refinements
+        script: node scripts/apply-step10-player-refinements.mjs
       - name: Create and sync Capacitor iOS project
         script: |
           if [ ! -d ios ]; then
@@ -92,6 +94,8 @@ workflows:
         script: npm install --no-audit --no-fund
       - name: Apply tested Build 56 native Circuit Player web bridge
         script: node scripts/activate-native-circuit-bridge.mjs
+      - name: Apply Step 10 iPad timer and Player refinements
+        script: node scripts/apply-step10-player-refinements.mjs
       - name: Create and sync Capacitor iOS project
         script: |
           if [ ! -d ios ]; then
@@ -126,9 +130,9 @@ workflows:
             exit 1
           fi
           NEXT_BUILD_NUMBER=$((LATEST_BUILD_NUMBER + 1))
-          if [ "$NEXT_BUILD_NUMBER" -lt 57 ]; then NEXT_BUILD_NUMBER=57; fi
+          if [ "$NEXT_BUILD_NUMBER" -lt 58 ]; then NEXT_BUILD_NUMBER=58; fi
           echo "Latest TestFlight build: $LATEST_BUILD_NUMBER"
-          echo "Using build number (minimum 57): $NEXT_BUILD_NUMBER"
+          echo "Using build number (minimum 58): $NEXT_BUILD_NUMBER"
           cd ios/App
           agvtool new-version -all "$NEXT_BUILD_NUMBER"
           cd "$CM_BUILD_DIR"
