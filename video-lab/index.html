@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <title>Kinetosphere iOS Video Lab</title>
+<link id="shellStyles" rel="stylesheet" href="mobile-shell.css" disabled>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;background:#0d1117;color:#f8fafc;font-family:-apple-system,system-ui,sans-serif}
@@ -17,6 +18,13 @@ main{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
 #stage{position:relative;flex:none;width:min(100%,calc((100dvh - 140px) * 16 / 9));max-height:100%;aspect-ratio:16 / 9;border:3px solid #f59e0b;background:#000;overflow:hidden}
 #frame{position:absolute;inset:0;border:0;width:100%;height:100%;margin:0;padding:0;display:block;background:#000;touch-action:auto;pointer-events:auto}
 #stage::after{content:"";pointer-events:none;position:absolute;inset:4px;border:2px solid #22d3ee;z-index:1}
+#shellStage{display:none;position:relative;flex:none;width:min(100%,calc((100dvh - 140px) * 16 / 9));height:auto;aspect-ratio:16/9;border:3px solid #f59e0b;background:#000;overflow:hidden}
+#shellStage .app,#shellStage #playerView,#shellStage #playerArea,#shellStage .workout-shell,#shellStage .video-card,#shellStage .video-wrap,#shellStage #ytFrame{min-width:0;max-width:100%;width:100%;height:100%;box-sizing:border-box}
+#shellStage .workout-shell{display:block!important}
+#shellStage .video-card{display:block!important;flex:none!important;aspect-ratio:16/9!important}
+#shellStage .video-wrap{position:relative!important;aspect-ratio:16/9!important}
+#shellStage #ytFrame{position:relative!important}
+#shellStage #frame{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;pointer-events:auto!important}
 footer{flex:none;padding:4px 6px;background:#111827;border:1px solid #475569;border-radius:6px;display:flex;flex-direction:column;gap:3px}
 #metrics,#events{font:10px/1.35 ui-monospace,monospace;overflow-wrap:anywhere}
 #events{color:#94f2b0;max-height:30px;overflow:hidden}
@@ -32,8 +40,11 @@ footer{flex:none;padding:4px 6px;background:#111827;border:1px solid #475569;bor
 <button type="button" data-mode="nocookie" aria-pressed="false">C · No-cookie HTTPS</button>
 <button type="button" data-mode="direct" aria-pressed="false">D · Direct (may error 153)</button>
 <button type="button" id="refresh">Reload current</button>
+<button type="button" id="shellToggle" aria-pressed="false">E · Test Player shell</button>
 </nav>
-<main><div id="stage"><iframe id="frame" title="Video test player" allow="autoplay; encrypted-media; picture-in-picture; fullscreen; accelerometer; gyroscope" allowfullscreen webkitallowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></main>
+<!-- KS SHELL A/B: move SAME iframe between known-good minimal frame and actual Player class structure. -->
+<main><div id="stage"><iframe id="frame" title="Video test player" allow="autoplay; encrypted-media; picture-in-picture; fullscreen; accelerometer; gyroscope" allowfullscreen webkitallowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+<div id="shellStage"><div class="app"><div id="playerView"><div id="playerArea"><div class="workout-shell"><section class="video-card"><div class="video-wrap"><div id="ytFrame"></div></div></section></div></div></div></div></div></main>
 <footer><div id="metrics">Waiting for viewport geometry</div><div id="events">Start with A in portrait, rotate, then test controls and fullscreen.</div></footer>
 </div>
 <script>
@@ -46,13 +57,29 @@ const modes={
  nocookie:{label:"C · Privacy-enhanced HTTPS",url:"https://52-2.homegym-5ke.pages.dev/embed/youtube-compat?mode=nocookie-inline&id="+id+"&muted=1"},
  direct:{label:"D · Direct YouTube (Error 153 possible)",url:"https://www.youtube.com/embed/"+id+"?playsinline=1&controls=1&fs=1&autoplay=1&mute=1"}
 };
-let current="bridge";let loadCount=0;let events=[];
+let current="bridge";let loadCount=0;let events=[];let shell=false;
+const minimal=document.getElementById("stage"), shellStage=document.getElementById("shellStage"), target=document.getElementById("ytFrame"), toggle=document.getElementById("shellToggle"), shellStyles=document.getElementById("shellStyles");
 const rect=el=>{const r=el.getBoundingClientRect();return [r.left,r.top,r.width,r.height].map(v=>Math.round(v)).join(",")};
 function log(s){events.unshift(new Date().toLocaleTimeString()+" "+s);events=events.slice(0,4);document.getElementById("events").textContent=events.join(" | ")}
-function metrics(){const vv=visualViewport;document.getElementById("metrics").textContent="KS LAB | "+current+" | inner "+innerWidth+"×"+innerHeight+" | visual "+(vv?Math.round(vv.width)+"×"+Math.round(vv.height)+" scale "+vv.scale.toFixed(2):"n/a")+" | page "+document.documentElement.scrollWidth+" | stage x,y,w,h "+rect(document.getElementById("stage"))+" | iframe "+rect(frame)+" | focus "+document.hasFocus();}
+function metrics(){const vv=visualViewport;document.getElementById("metrics").textContent="KS LAB | "+current+" / "+(shell?"PLAYER SHELL":"MINIMAL")" | inner "+innerWidth+"×"+innerHeight+" | visual "+(vv?Math.round(vv.width)+"×"+Math.round(vv.height)+" scale "+vv.scale.toFixed(2):"n/a")+" | page "+document.documentElement.scrollWidth+" | stage x,y,w,h "+rect(shell?shellStage:minimal)+" | iframe "+rect(frame)+" | focus "+document.hasFocus();}
+function setShell(value){
+ shell=!!value;
+ shellStyles.disabled=!shell;
+ document.documentElement.classList.toggle("native-capacitor-shell",shell);
+ document.body.classList.toggle("player-active",shell);
+ // The actual production Player classes and stylesheet are applied only in Shell mode.
+ // Reparent iframe and reload the same video; this deliberately does not preserve playback position.
+ (shell?target:minimal).appendChild(frame);
+ minimal.style.display=shell?"none":"block";
+ shellStage.style.display=shell?"block":"none";
+ toggle.setAttribute("aria-pressed",String(shell));
+ toggle.textContent=shell?"E · Back to Minimal":"E · Test Player shell";
+ log(shell?"Player CSS shell on":"Minimal shell restored");select(current);
+}
 function select(key){if(!modes[key])return;current=key;document.getElementById("modeLabel").textContent=modes[key].label;document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mode===key)));frame.removeAttribute("src");frame.src=modes[key].url+"&kslab="+(++loadCount);log("open "+key);metrics();}
 document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>select(b.dataset.mode)));
 document.getElementById("refresh").addEventListener("click",()=>select(current));
+toggle.addEventListener("click",()=>setShell(!shell));
 frame.addEventListener("load",()=>log("iframe load "+current));
 addEventListener("resize",()=>{log("window resize");metrics()},{passive:true});
 addEventListener("orientationchange",()=>{log("orientation");metrics();setTimeout(metrics,500)},{passive:true});
