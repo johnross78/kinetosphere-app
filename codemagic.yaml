@@ -10,14 +10,15 @@ workflows:
     scripts:
       - name: Install dependencies
         script: npm install --no-audit --no-fund
-      - name: Apply Build 51 HTTPS player comparison
-        script: node scripts/apply-build51-youtube.mjs
+      - name: Apply tested Build 56 native Circuit Player web bridge
+        script: node scripts/activate-native-circuit-bridge.mjs
       - name: Create and sync Capacitor iOS project
         script: |
           if [ ! -d ios ]; then
             npx cap add ios
           fi
           npx cap sync ios
+          node scripts/activate-native-circuit-controller.mjs
           APPICON_DIR="$CM_BUILD_DIR/ios/App/App/Assets.xcassets/AppIcon.appiconset"
           mkdir -p "$APPICON_DIR"
           cp "$CM_BUILD_DIR/resources/icon.png" "$APPICON_DIR/AppIcon-512@2x.png"
@@ -80,6 +81,7 @@ workflows:
         bundle_identifier: com.kinetosphere.app
       vars:
         APP_STORE_APPLE_ID: "6816505375"
+        APP_STORE_CONNECT_ALTOOL_ADDITIONAL_ARGUMENTS: "--use-old-altool"
         XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
       node: v22.11.0
@@ -88,14 +90,15 @@ workflows:
     scripts:
       - name: Install dependencies
         script: npm install --no-audit --no-fund
-      - name: Apply Build 51 HTTPS player comparison
-        script: node scripts/apply-build51-youtube.mjs
+      - name: Apply tested Build 56 native Circuit Player web bridge
+        script: node scripts/activate-native-circuit-bridge.mjs
       - name: Create and sync Capacitor iOS project
         script: |
           if [ ! -d ios ]; then
             npx cap add ios
           fi
           npx cap sync ios
+          node scripts/activate-native-circuit-controller.mjs
           APPICON_DIR="$CM_BUILD_DIR/ios/App/App/Assets.xcassets/AppIcon.appiconset"
           mkdir -p "$APPICON_DIR"
           cp "$CM_BUILD_DIR/resources/icon.png" "$APPICON_DIR/AppIcon-512@2x.png"
@@ -118,9 +121,14 @@ workflows:
           /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" ios/App/App/Info.plist 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" ios/App/App/Info.plist
           LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID")
+          if ! [[ "$LATEST_BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "Invalid latest TestFlight build number: $LATEST_BUILD_NUMBER"
+            exit 1
+          fi
           NEXT_BUILD_NUMBER=$((LATEST_BUILD_NUMBER + 1))
+          if [ "$NEXT_BUILD_NUMBER" -lt 57 ]; then NEXT_BUILD_NUMBER=57; fi
           echo "Latest TestFlight build: $LATEST_BUILD_NUMBER"
-          echo "Using build number: $NEXT_BUILD_NUMBER"
+          echo "Using build number (minimum 57): $NEXT_BUILD_NUMBER"
           cd ios/App
           agvtool new-version -all "$NEXT_BUILD_NUMBER"
           cd "$CM_BUILD_DIR"
