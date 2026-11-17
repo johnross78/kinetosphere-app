@@ -1,0 +1,279 @@
+-- KINETOSPHERE, 2026-11-17 — READ-ONLY VERIFIED CATALOG EVIDENCE; NOT EXECUTABLE OR DEPLOYABLE.
+-- All DDL/SQL is COMMENTED intentionally. It must be reconstructed and tested before any use.
+-- Hardcoded user UUIDs replaced with synthetic 00000000-0000-4000-8000-000000000999.
+
+
+-- public.accept_provider_invite(p_invite_id uuid); SECURITY_DEFINER=true; owner=postgres; config=["search_path=public"]; acl={postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+-- CREATE OR REPLACE FUNCTION public.accept_provider_invite(p_invite_id uuid)
+--  RETURNS uuid
+--  LANGUAGE plpgsql
+--  SECURITY DEFINER
+--  SET search_path TO 'public'
+-- AS $function$
+-- declare
+--   v_inv public.provider_invites%rowtype;
+--   v_email text := lower(coalesce(auth.jwt()->>'email',''));
+--   v_uid uuid := auth.uid();
+-- begin
+--   if v_uid is null then
+--     raise exception 'Sign in required';
+--   end if;
+--   select * into v_inv from public.provider_invites where id=p_invite_id for update;
+--   if v_inv.id is null then raise exception 'Invite not found'; end if;
+--   if v_inv.status <> 'pending' then raise exception 'Invite is no longer pending'; end if;
+--   if v_email='' or lower(v_inv.email)<>v_email then raise exception 'This invite belongs to a different email address'; end if;
+--   if exists(select 1 from public.provider_members where provider_id=v_inv.provider_id and user_id=v_uid) then
+--     raise exception 'Already a member of this provider; invitations cannot change an existing role';
+--   end if;
+--   insert into public.provider_members(provider_id,user_id,role)
+--   values(v_inv.provider_id,v_uid,v_inv.role)
+--   on conflict(provider_id,user_id) do nothing;
+--   if not found then
+--     raise exception 'Already a member of this provider';
+--   end if;
+--   update public.provider_invites set status='accepted',accepted_at=now() where id=v_inv.id;
+--   return v_inv.provider_id;
+-- end;
+-- $function$
+-- 
+
+-- public.claim_provider_invite_email(p_invite_id uuid); SECURITY_DEFINER=true; owner=postgres; config=["search_path=public"]; acl={postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+-- CREATE OR REPLACE FUNCTION public.claim_provider_invite_email(p_invite_id uuid)
+--  RETURNS TABLE(invite_id uuid, recipient_email text, provider_name text, invited_role text)
+--  LANGUAGE plpgsql
+--  SECURITY DEFINER
+--  SET search_path TO 'public'
+-- AS $function$
+-- declare v_inv public.provider_invites%rowtype;
+-- begin
+--  if auth.uid() is null then raise exception 'Sign in required'; end if;
+--  select * into v_inv from public.provider_invites where id=p_invite_id for update;
+--  if v_inv.id is null then raise exception 'Invite not found'; end if;
+--  if not (public.provider_has_capability(v_inv.provider_id,'members:manage') or public.is_platform_admin()) then
+--    raise exception 'Not authorized to send this provider invitation';
+--  end if;
+--  if v_inv.status <> 'pending' then raise exception 'Invite is not pending'; end if;
+--  if v_inv.email_delivery_status='sent' then raise exception 'Invitation email already sent'; end if;
+--  if v_inv.email_delivery_status='sending' and v_inv.email_delivery_attempted_at > now()-interval '10 minutes' then
+--    raise exception 'Invitation email is already being processed';
+--  end if;
+--  update public.provider_invites
+--  set email_delivery_status='sending',email_delivery_attempted_at=now(),email_delivery_error=null
+--  where id=p_invite_id;
+--  return query select v_inv.id,v_inv.email,p.name,v_inv.role from public.providers p where p.id=v_inv.provider_id;
+-- end $function$
+-- 
+
+-- public.create_provider_invite(p_provider_id uuid, p_email text, p_role text); SECURITY_DEFINER=true; owner=postgres; config=["search_path=public"]; acl={postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+-- CREATE OR REPLACE FUNCTION public.create_provider_invite(p_provider_id uuid, p_email text, p_role text)
+--  RETURNS uuid
+--  LANGUAGE plpgsql
+--  SECURITY DEFINER
+--  SET search_path TO 'public'
+-- AS $function$
+-- declare
+--   v_id uuid;
+--   v_email text := lower(trim(p_email));
+-- begin
+--   if not (public.provider_has_capability(p_provider_id,'members:manage') or public.is_platform_admin()) then
+--     raise exception 'Not authorized to manage this provider team';
+--   end if;
+--   if p_role not in ('admin','editor','analyst') then
+--     raise exception 'Invalid provider role';
+--   end if;
+--   if v_email is null or v_email='' or position('@' in v_email)=0 then
+--     raise exception 'A valid email is required';
+--   end if;
+-- 
+--   update public.provider_invites
+--   set status='revoked', revoked_at=now()
+--   where provider_id=p_provider_id
+--     and lower(email)=v_email
+--     and status='pending';
+-- 
+--   insert into public.provider_invites(provider_id,email,role,invited_by)
+--   values(p_provider_id,v_email,p_role,auth.uid())
+--   returning id into v_id;
+-- 
+--   return v_id;
+-- end;
+-- $function$
+-- 
+
+-- public.current_provider_role(p_provider_id uuid); SECURITY_DEFINER=true; owner=postgres; config=["search_path=public"]; acl={=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+-- CREATE OR REPLACE FUNCTION public.current_provider_role(p_provider_id uuid)
+--  RETURNS text
+--  LANGUAGE sql
+--  STABLE SECURITY DEFINER
+--  SET search_path TO 'public'
+-- AS $function$
+--   select pm.role
+--   from public.provider_members pm
+--   where pm.provider_id = p_provider_id
+--     and pm.user_id = auth.uid()
+--   limit 1;
+-- $function$
+-- 
+
+-- public.is_platform_admin(); SECURITY_DEFINER=true; owner=postgres; config=["search_path=public"]; acl={=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+-- CREATE OR REPLACE FUNCTION public.is_platform_admin()
+--  RETURNS boolean
+--  LANGUAGE sql
+--  STABLE SECURITY DEFINER
+--  SET search_path TO 'public'
+-- AS $function$
+--   select coalesce(((auth.jwt() -> 'app_metadata' ->> 'admin')::boolean), false)
+--       or (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin';
+-- $function$
+-- 
+
+-- public.provider_has_capability(p_provider_id uuid, p_capability text); SECURITY_DEFINER=true; owner=postgres; config=["search_path=public"]; acl={=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+-- CREATE OR REPLACE FUNCTION public.provider_has_capability(p_provider_id uuid, p_capability text)
+--  RETURNS boolean
+--  LANGUAGE sql
+--  STABLE SECURITY DEFINER
+--  SET search_path TO 'public'
+-- AS $function$
+--   select public.is_platform_admin()
+--       or case public.current_provider_role(p_provider_id)
+--            when 'owner' then p_capability in ('storefront:edit','media:edit','analytics:view','members:view','members:manage','content:edit')
+--            when 'admin' then p_capability in ('storefront:edit','media:edit','analytics:view','members:view','content:edit')
+--            when 'editor' then p_capability in ('storefront:edit','media:edit','content:edit')
+--            when 'analyst' then p_capability in ('analytics:view')
+--            else false
+--          end;
+-- $function$
+-- 
+
+-- public.remove_provider_member(p_provider_id uuid, p_user_id uuid); SECURITY_DEFINER=true; owner=postgres; config=["search_path=public"]; acl={postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+-- CREATE OR REPLACE FUNCTION public.remove_provider_member(p_provider_id uuid, p_user_id uuid)
+--  RETURNS boolean
+--  LANGUAGE plpgsql
+--  SECURITY DEFINER
+--  SET search_path TO 'public'
+-- AS $function$
+-- begin
+--   if not (public.provider_has_capability(p_provider_id,'members:manage') or public.is_platform_admin()) then
+--     raise exception 'Not authorized to manage this provider team';
+--   end if;
+-- 
+--   delete from public.provider_members
+--   where provider_id=p_provider_id
+--     and user_id=p_user_id
+--     and role<>'owner';
+-- 
+--   return found;
+-- end;
+-- $function$
+-- 
+
+-- public.review_provider_onboarding_application(p_application_id uuid, p_approve boolean); SECURITY_DEFINER=true; owner=postgres; config=["search_path=public"]; acl={postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+-- CREATE OR REPLACE FUNCTION public.review_provider_onboarding_application(p_application_id uuid, p_approve boolean)
+--  RETURNS uuid
+--  LANGUAGE plpgsql
+--  SECURITY DEFINER
+--  SET search_path TO 'public'
+-- AS $function$
+-- declare v_app public.provider_onboarding_applications%rowtype; v_provider_id uuid; v_slug text;
+-- begin
+--  if auth.uid() is null or not public.is_platform_admin() then raise exception 'Kinetosphere platform administration required'; end if;
+--  select * into v_app from public.provider_onboarding_applications where id=p_application_id for update;
+--  if v_app.id is null then raise exception 'Application not found'; end if;
+--  if v_app.status<>'pending' then raise exception 'Application already reviewed'; end if;
+--  if not p_approve then
+--    update public.provider_onboarding_applications set status='rejected',reviewed_by=auth.uid(),reviewed_at=now(),updated_at=now() where id=v_app.id;
+--    return null;
+--  end if;
+--  v_slug:=trim(both '-' from regexp_replace(lower(v_app.business_name),'[^a-z0-9]+','-','g'));
+--  if v_slug='' then v_slug:='provider'; end if;
+--  v_slug:=left(v_slug,65)||'-'||left(replace(v_app.id::text,'-',''),8);
+--  insert into public.providers(slug,name,description,status,discoverable,access_model)
+--  values(v_slug,v_app.business_name,v_app.description,'pending',false,'private')
+--  returning id into v_provider_id;
+--  insert into public.provider_members(provider_id,user_id,role) values(v_provider_id,v_app.applicant_user_id,'owner');
+--  update public.provider_onboarding_applications set status='approved',assigned_provider_id=v_provider_id,reviewed_by=auth.uid(),reviewed_at=now(),updated_at=now()
+--  where id=v_app.id;
+--  return v_provider_id;
+-- end $function$
+-- 
+
+-- public.revoke_provider_invite(p_invite_id uuid); SECURITY_DEFINER=true; owner=postgres; config=["search_path=public"]; acl={postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+-- CREATE OR REPLACE FUNCTION public.revoke_provider_invite(p_invite_id uuid)
+--  RETURNS boolean
+--  LANGUAGE plpgsql
+--  SECURITY DEFINER
+--  SET search_path TO 'public'
+-- AS $function$
+-- declare
+--   v_provider_id uuid;
+-- begin
+--   select provider_id into v_provider_id
+--   from public.provider_invites
+--   where id=p_invite_id;
+-- 
+--   if v_provider_id is null then
+--     return false;
+--   end if;
+-- 
+--   if not (public.provider_has_capability(v_provider_id,'members:manage') or public.is_platform_admin()) then
+--     raise exception 'Not authorized to manage this provider team';
+--   end if;
+-- 
+--   update public.provider_invites
+--   set status='revoked', revoked_at=now()
+--   where id=p_invite_id and status='pending';
+-- 
+--   return true;
+-- end;
+-- $function$
+-- 
+
+-- public.submit_provider_onboarding_application(p_business_name text, p_contact_email text, p_description text, p_website_url text); SECURITY_DEFINER=true; owner=postgres; config=["search_path=public"]; acl={postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+-- CREATE OR REPLACE FUNCTION public.submit_provider_onboarding_application(p_business_name text, p_contact_email text, p_description text DEFAULT ''::text, p_website_url text DEFAULT NULL::text)
+--  RETURNS uuid
+--  LANGUAGE plpgsql
+--  SECURITY DEFINER
+--  SET search_path TO 'public'
+-- AS $function$
+-- declare v_id uuid; v_email text;
+-- begin
+--  if auth.uid() is null then raise exception 'Sign in required'; end if;
+--  if char_length(btrim(coalesce(p_business_name,''))) not between 2 and 120 then raise exception 'Business name must be 2 to 120 characters'; end if;
+--  v_email:=lower(btrim(coalesce(p_contact_email,'')));
+--  if v_email !~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$' or length(v_email)>254 then raise exception 'Invalid contact email'; end if;
+--  if v_email<>lower(coalesce(auth.jwt()->>'email','')) then raise exception 'Use the email address of your signed-in account'; end if;
+--  if length(coalesce(p_description,''))>2000 then raise exception 'Description too long'; end if;
+--  if p_website_url is not null and length(p_website_url)>500 then raise exception 'Website URL too long'; end if;
+--  if exists (select 1 from public.provider_onboarding_applications where applicant_user_id=auth.uid() and status='pending') then raise exception 'You already have a pending application'; end if;
+--  insert into public.provider_onboarding_applications(applicant_user_id,business_name,contact_email,description,website_url)
+--  values(auth.uid(),btrim(p_business_name),v_email,btrim(coalesce(p_description,'')),nullif(btrim(coalesce(p_website_url,'')),''))
+--  returning id into v_id;
+--  return v_id;
+-- end $function$
+-- 
+
+-- public.update_provider_member_role(p_provider_id uuid, p_user_id uuid, p_role text); SECURITY_DEFINER=true; owner=postgres; config=["search_path=public"]; acl={postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+-- CREATE OR REPLACE FUNCTION public.update_provider_member_role(p_provider_id uuid, p_user_id uuid, p_role text)
+--  RETURNS boolean
+--  LANGUAGE plpgsql
+--  SECURITY DEFINER
+--  SET search_path TO 'public'
+-- AS $function$
+-- begin
+--   if not (public.provider_has_capability(p_provider_id,'members:manage') or public.is_platform_admin()) then
+--     raise exception 'Not authorized to manage this provider team';
+--   end if;
+--   if p_role not in ('admin','editor','analyst') then
+--     raise exception 'Invalid provider role';
+--   end if;
+-- 
+--   update public.provider_members
+--   set role=p_role
+--   where provider_id=p_provider_id
+--     and user_id=p_user_id
+--     and role<>'owner';
+-- 
+--   return found;
+-- end;
+-- $function$
+-- 
