@@ -1,0 +1,559 @@
+-- KINETOSPHERE, 2026-11-17 — READ-ONLY VERIFIED CATALOG EVIDENCE; NOT EXECUTABLE OR DEPLOYABLE.
+-- All DDL/SQL is COMMENTED intentionally. It must be reconstructed and tested before any use.
+-- Hardcoded user UUIDs replaced with synthetic 00000000-0000-4000-8000-000000000999.
+
+
+-- analytics_events.analytics_insert_own: PERMISSIVE; command=INSERT; roles={authenticated}
+-- USING: <none>
+-- WITH CHECK: (user_id = auth.uid())
+
+-- analytics_events.analytics_read_provider_or_superadmin: PERMISSIVE; command=SELECT; roles={authenticated}
+-- USING: (COALESCE((((auth.jwt() -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text) OR (EXISTS ( SELECT 1
+--      FROM provider_members pm
+--     WHERE ((pm.provider_id = analytics_events.provider_id) AND (pm.user_id = auth.uid()) AND (pm.role = ANY (ARRAY['owner'::text, 'admin'::text, 'analyst'::text]))))))
+-- WITH CHECK: <none>
+
+-- gym_circuits.gym_circuits_own_rows: PERMISSIVE; command=ALL; roles={authenticated}
+-- USING: (( SELECT auth.uid() AS uid) = user_id)
+-- WITH CHECK: (( SELECT auth.uid() AS uid) = user_id)
+
+-- gym_exercises.gym_exercises_own_rows: PERMISSIVE; command=ALL; roles={authenticated}
+-- USING: (( SELECT auth.uid() AS uid) = user_id)
+-- WITH CHECK: (( SELECT auth.uid() AS uid) = user_id)
+
+-- gym_favorites.users can delete own favorites: PERMISSIVE; command=DELETE; roles={authenticated}
+-- USING: (( SELECT auth.uid() AS uid) = user_id)
+-- WITH CHECK: <none>
+
+-- gym_favorites.users can insert own favorites: PERMISSIVE; command=INSERT; roles={authenticated}
+-- USING: <none>
+-- WITH CHECK: (( SELECT auth.uid() AS uid) = user_id)
+
+-- gym_favorites.users can update own favorites: PERMISSIVE; command=UPDATE; roles={authenticated}
+-- USING: (( SELECT auth.uid() AS uid) = user_id)
+-- WITH CHECK: (( SELECT auth.uid() AS uid) = user_id)
+
+-- gym_favorites.users can view own favorites: PERMISSIVE; command=SELECT; roles={authenticated}
+-- USING: (( SELECT auth.uid() AS uid) = user_id)
+-- WITH CHECK: <none>
+
+-- gym_playlist_sources.gym_playlist_sources_own_rows: PERMISSIVE; command=ALL; roles={authenticated}
+-- USING: (( SELECT auth.uid() AS uid) = user_id)
+-- WITH CHECK: (( SELECT auth.uid() AS uid) = user_id)
+
+-- gym_settings.gym_settings_own_rows: PERMISSIVE; command=ALL; roles={authenticated}
+-- USING: (( SELECT auth.uid() AS uid) = user_id)
+-- WITH CHECK: (( SELECT auth.uid() AS uid) = user_id)
+
+-- media_health_issues.media_health_superadmin_delete: PERMISSIVE; command=DELETE; roles={authenticated}
+-- USING: ((( SELECT auth.uid() AS uid) = '00000000-0000-4000-8000-000000000999'::uuid) OR COALESCE((((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+-- WITH CHECK: <none>
+
+-- media_health_issues.media_health_superadmin_insert: PERMISSIVE; command=INSERT; roles={authenticated}
+-- USING: <none>
+-- WITH CHECK: ((( SELECT auth.uid() AS uid) = '00000000-0000-4000-8000-000000000999'::uuid) OR COALESCE((((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+
+-- media_health_issues.media_health_superadmin_read: PERMISSIVE; command=SELECT; roles={authenticated}
+-- USING: ((( SELECT auth.uid() AS uid) = '00000000-0000-4000-8000-000000000999'::uuid) OR COALESCE((((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+-- WITH CHECK: <none>
+
+-- media_health_issues.media_health_superadmin_update: PERMISSIVE; command=UPDATE; roles={authenticated}
+-- USING: ((( SELECT auth.uid() AS uid) = '00000000-0000-4000-8000-000000000999'::uuid) OR COALESCE((((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+-- WITH CHECK: ((( SELECT auth.uid() AS uid) = '00000000-0000-4000-8000-000000000999'::uuid) OR COALESCE((((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+
+-- provider_acquisition_requests.acquisition_requests_own_insert: PERMISSIVE; command=INSERT; roles={authenticated}
+-- USING: <none>
+-- WITH CHECK: (( SELECT auth.uid() AS uid) = user_id)
+
+-- provider_acquisition_requests.acquisition_requests_own_select: PERMISSIVE; command=SELECT; roles={authenticated}
+-- USING: (( SELECT auth.uid() AS uid) = user_id)
+-- WITH CHECK: <none>
+
+-- provider_acquisition_requests.acquisition_requests_own_update: PERMISSIVE; command=UPDATE; roles={authenticated}
+-- USING: (( SELECT auth.uid() AS uid) = user_id)
+-- WITH CHECK: (( SELECT auth.uid() AS uid) = user_id)
+
+-- provider_acquisition_requests.acquisition_requests_provider_read: PERMISSIVE; command=SELECT; roles={authenticated}
+-- USING: (EXISTS ( SELECT 1
+--      FROM provider_members pm
+--     WHERE ((pm.provider_id = provider_acquisition_requests.provider_id) AND (pm.user_id = ( SELECT auth.uid() AS uid)) AND (pm.role = ANY (ARRAY['owner'::text, 'admin'::text, 'analyst'::text])))))
+-- WITH CHECK: <none>
+
+-- provider_acquisition_requests.acquisition_requests_superadmin_manage: PERMISSIVE; command=ALL; roles={authenticated}
+-- USING: (COALESCE((((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+-- WITH CHECK: (COALESCE((((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+
+-- provider_content_ownership.provider_content_ownership_manage: PERMISSIVE; command=ALL; roles={authenticated}
+-- USING: (provider_has_capability(provider_id, 'content:edit'::text) OR is_platform_admin())
+-- WITH CHECK: (provider_has_capability(provider_id, 'content:edit'::text) OR is_platform_admin())
+
+-- provider_content_ownership.provider_content_ownership_read: PERMISSIVE; command=SELECT; roles={authenticated}
+-- USING: (provider_has_capability(provider_id, 'members:view'::text) OR provider_has_capability(provider_id, 'content:edit'::text) OR is_platform_admin())
+-- WITH CHECK: <none>
+
+-- provider_entitlements.entitlements_read_own_provider_or_superadmin: PERMISSIVE; command=SELECT; roles={authenticated}
+-- USING: ((user_id = auth.uid()) OR (EXISTS ( SELECT 1
+--      FROM provider_members pm
+--     WHERE ((pm.provider_id = provider_entitlements.provider_id) AND (pm.user_id = auth.uid())))) OR COALESCE((((auth.jwt() -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+-- WITH CHECK: <none>
+
+-- provider_entitlements.entitlements_superadmin_manage: PERMISSIVE; command=ALL; roles={authenticated}
+-- USING: (COALESCE((((auth.jwt() -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+-- WITH CHECK: (COALESCE((((auth.jwt() -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+
+-- provider_invites.provider_invites_owner_insert: PERMISSIVE; command=INSERT; roles={authenticated}
+-- USING: <none>
+-- WITH CHECK: ((provider_has_capability(provider_id, 'members:manage'::text) OR is_platform_admin()) AND (invited_by = auth.uid()))
+
+-- provider_invites.provider_invites_owner_read: PERMISSIVE; command=SELECT; roles={authenticated}
+-- USING: (provider_has_capability(provider_id, 'members:manage'::text) OR is_platform_admin() OR (lower(email) = lower(COALESCE((auth.jwt() ->> 'email'::text), ''::text))))
+-- WITH CHECK: <none>
+
+-- provider_invites.provider_invites_owner_update: PERMISSIVE; command=UPDATE; roles={authenticated}
+-- USING: (provider_has_capability(provider_id, 'members:manage'::text) OR is_platform_admin())
+-- WITH CHECK: (provider_has_capability(provider_id, 'members:manage'::text) OR is_platform_admin())
+
+-- provider_media_assets.media_provider_or_superadmin_manage: PERMISSIVE; command=ALL; roles={authenticated}
+-- USING: ((EXISTS ( SELECT 1
+--      FROM provider_members pm
+--     WHERE ((pm.provider_id = provider_media_assets.provider_id) AND (pm.user_id = auth.uid()) AND (pm.role = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text]))))) OR COALESCE((((auth.jwt() -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+-- WITH CHECK: ((EXISTS ( SELECT 1
+--      FROM provider_members pm
+--     WHERE ((pm.provider_id = provider_media_assets.provider_id) AND (pm.user_id = auth.uid()) AND (pm.role = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text]))))) OR COALESCE((((auth.jwt() -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+
+-- provider_media_assets.media_read_entitled_member_or_discoverable: PERMISSIVE; command=SELECT; roles={authenticated}
+-- USING: ((provider_id IS NULL) OR (EXISTS ( SELECT 1
+--      FROM provider_members pm
+--     WHERE ((pm.provider_id = provider_media_assets.provider_id) AND (pm.user_id = auth.uid())))) OR (EXISTS ( SELECT 1
+--      FROM provider_entitlements pe
+--     WHERE ((pe.provider_id = provider_media_assets.provider_id) AND (pe.user_id = auth.uid()) AND (pe.status = ANY (ARRAY['active'::text, 'trialing'::text, 'comped'::text]))))) OR (EXISTS ( SELECT 1
+--      FROM providers p
+--     WHERE ((p.id = provider_media_assets.provider_id) AND (p.discoverable = true) AND (p.free_sample_enabled = true)))) OR COALESCE((((auth.jwt() -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+-- WITH CHECK: <none>
+
+-- provider_members.provider_members_read_self_provider_or_superadmin: PERMISSIVE; command=SELECT; roles={authenticated}
+-- USING: ((user_id = auth.uid()) OR provider_has_capability(provider_id, 'members:view'::text) OR is_platform_admin())
+-- WITH CHECK: <none>
+
+-- provider_members.provider_members_superadmin_manage: PERMISSIVE; command=ALL; roles={authenticated}
+-- USING: (COALESCE((((auth.jwt() -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+-- WITH CHECK: (COALESCE((((auth.jwt() -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+
+-- provider_onboarding_applications.onboarding_applicant_read: PERMISSIVE; command=SELECT; roles={authenticated}
+-- USING: ((applicant_user_id = auth.uid()) OR is_platform_admin())
+-- WITH CHECK: <none>
+
+-- provider_storefronts.provider_storefronts_provider_manage: PERMISSIVE; command=ALL; roles={authenticated}
+-- USING: ((EXISTS ( SELECT 1
+--      FROM provider_members pm
+--     WHERE ((pm.provider_id = provider_storefronts.provider_id) AND (pm.user_id = ( SELECT auth.uid() AS uid)) AND (pm.role = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text]))))) OR COALESCE((((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+-- WITH CHECK: ((EXISTS ( SELECT 1
+--      FROM provider_members pm
+--     WHERE ((pm.provider_id = provider_storefronts.provider_id) AND (pm.user_id = ( SELECT auth.uid() AS uid)) AND (pm.role = ANY (ARRAY['owner'::text, 'admin'::text, 'editor'::text]))))) OR COALESCE((((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+
+-- provider_storefronts.provider_storefronts_read_authenticated: PERMISSIVE; command=SELECT; roles={authenticated}
+-- USING: ((EXISTS ( SELECT 1
+--      FROM providers p
+--     WHERE ((p.id = provider_storefronts.provider_id) AND (p.discoverable = true)))) OR (EXISTS ( SELECT 1
+--      FROM provider_members pm
+--     WHERE ((pm.provider_id = provider_storefronts.provider_id) AND (pm.user_id = ( SELECT auth.uid() AS uid))))) OR COALESCE((((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((( SELECT auth.jwt() AS jwt) -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+-- WITH CHECK: <none>
+
+-- providers.providers_read_authenticated: PERMISSIVE; command=SELECT; roles={authenticated}
+-- USING: ((discoverable = true) OR COALESCE((((auth.jwt() -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text) OR (EXISTS ( SELECT 1
+--      FROM provider_members pm
+--     WHERE ((pm.provider_id = providers.id) AND (pm.user_id = auth.uid())))))
+-- WITH CHECK: <none>
+
+-- providers.providers_superadmin_manage: PERMISSIVE; command=ALL; roles={authenticated}
+-- USING: (COALESCE((((auth.jwt() -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+-- WITH CHECK: (COALESCE((((auth.jwt() -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+
+-- shared_exercises.owner can manage shared exercises: PERMISSIVE; command=ALL; roles={authenticated}
+-- USING: (( SELECT auth.uid() AS uid) = '00000000-0000-4000-8000-000000000999'::uuid)
+-- WITH CHECK: (( SELECT auth.uid() AS uid) = '00000000-0000-4000-8000-000000000999'::uuid)
+
+-- shared_exercises.shared exercises are readable by everyone: PERMISSIVE; command=SELECT; roles={anon,authenticated}
+-- USING: true
+-- WITH CHECK: <none>
+
+-- user_program_status.program_status_own_rows: PERMISSIVE; command=ALL; roles={authenticated}
+-- USING: (user_id = auth.uid())
+-- WITH CHECK: (user_id = auth.uid())
+
+-- user_program_status.program_status_superadmin_read: PERMISSIVE; command=SELECT; roles={authenticated}
+-- USING: (COALESCE((((auth.jwt() -> 'app_metadata'::text) ->> 'admin'::text))::boolean, false) OR (((auth.jwt() -> 'app_metadata'::text) ->> 'role'::text) = 'admin'::text))
+-- WITH CHECK: <none>
+
+-- VERIFIED ROLE GRANTS
+-- analytics_events: anon DELETE
+-- analytics_events: anon INSERT
+-- analytics_events: anon REFERENCES
+-- analytics_events: anon SELECT
+-- analytics_events: anon TRIGGER
+-- analytics_events: anon TRUNCATE
+-- analytics_events: anon UPDATE
+-- analytics_events: authenticated DELETE
+-- analytics_events: authenticated INSERT
+-- analytics_events: authenticated REFERENCES
+-- analytics_events: authenticated SELECT
+-- analytics_events: authenticated TRIGGER
+-- analytics_events: authenticated TRUNCATE
+-- analytics_events: authenticated UPDATE
+-- analytics_events: service_role DELETE
+-- analytics_events: service_role INSERT
+-- analytics_events: service_role REFERENCES
+-- analytics_events: service_role SELECT
+-- analytics_events: service_role TRIGGER
+-- analytics_events: service_role TRUNCATE
+-- analytics_events: service_role UPDATE
+-- gym_circuits: anon DELETE
+-- gym_circuits: anon INSERT
+-- gym_circuits: anon REFERENCES
+-- gym_circuits: anon SELECT
+-- gym_circuits: anon TRIGGER
+-- gym_circuits: anon TRUNCATE
+-- gym_circuits: anon UPDATE
+-- gym_circuits: authenticated DELETE
+-- gym_circuits: authenticated INSERT
+-- gym_circuits: authenticated REFERENCES
+-- gym_circuits: authenticated SELECT
+-- gym_circuits: authenticated TRIGGER
+-- gym_circuits: authenticated TRUNCATE
+-- gym_circuits: authenticated UPDATE
+-- gym_circuits: service_role DELETE
+-- gym_circuits: service_role INSERT
+-- gym_circuits: service_role REFERENCES
+-- gym_circuits: service_role SELECT
+-- gym_circuits: service_role TRIGGER
+-- gym_circuits: service_role TRUNCATE
+-- gym_circuits: service_role UPDATE
+-- gym_exercises: anon DELETE
+-- gym_exercises: anon INSERT
+-- gym_exercises: anon REFERENCES
+-- gym_exercises: anon SELECT
+-- gym_exercises: anon TRIGGER
+-- gym_exercises: anon TRUNCATE
+-- gym_exercises: anon UPDATE
+-- gym_exercises: authenticated DELETE
+-- gym_exercises: authenticated INSERT
+-- gym_exercises: authenticated REFERENCES
+-- gym_exercises: authenticated SELECT
+-- gym_exercises: authenticated TRIGGER
+-- gym_exercises: authenticated TRUNCATE
+-- gym_exercises: authenticated UPDATE
+-- gym_exercises: service_role DELETE
+-- gym_exercises: service_role INSERT
+-- gym_exercises: service_role REFERENCES
+-- gym_exercises: service_role SELECT
+-- gym_exercises: service_role TRIGGER
+-- gym_exercises: service_role TRUNCATE
+-- gym_exercises: service_role UPDATE
+-- gym_favorites: authenticated DELETE
+-- gym_favorites: authenticated INSERT
+-- gym_favorites: authenticated SELECT
+-- gym_favorites: authenticated UPDATE
+-- gym_favorites: service_role DELETE
+-- gym_favorites: service_role INSERT
+-- gym_favorites: service_role REFERENCES
+-- gym_favorites: service_role SELECT
+-- gym_favorites: service_role TRIGGER
+-- gym_favorites: service_role TRUNCATE
+-- gym_favorites: service_role UPDATE
+-- gym_playlist_sources: anon DELETE
+-- gym_playlist_sources: anon INSERT
+-- gym_playlist_sources: anon REFERENCES
+-- gym_playlist_sources: anon SELECT
+-- gym_playlist_sources: anon TRIGGER
+-- gym_playlist_sources: anon TRUNCATE
+-- gym_playlist_sources: anon UPDATE
+-- gym_playlist_sources: authenticated DELETE
+-- gym_playlist_sources: authenticated INSERT
+-- gym_playlist_sources: authenticated REFERENCES
+-- gym_playlist_sources: authenticated SELECT
+-- gym_playlist_sources: authenticated TRIGGER
+-- gym_playlist_sources: authenticated TRUNCATE
+-- gym_playlist_sources: authenticated UPDATE
+-- gym_playlist_sources: service_role DELETE
+-- gym_playlist_sources: service_role INSERT
+-- gym_playlist_sources: service_role REFERENCES
+-- gym_playlist_sources: service_role SELECT
+-- gym_playlist_sources: service_role TRIGGER
+-- gym_playlist_sources: service_role TRUNCATE
+-- gym_playlist_sources: service_role UPDATE
+-- gym_settings: anon DELETE
+-- gym_settings: anon INSERT
+-- gym_settings: anon REFERENCES
+-- gym_settings: anon SELECT
+-- gym_settings: anon TRIGGER
+-- gym_settings: anon TRUNCATE
+-- gym_settings: anon UPDATE
+-- gym_settings: authenticated DELETE
+-- gym_settings: authenticated INSERT
+-- gym_settings: authenticated REFERENCES
+-- gym_settings: authenticated SELECT
+-- gym_settings: authenticated TRIGGER
+-- gym_settings: authenticated TRUNCATE
+-- gym_settings: authenticated UPDATE
+-- gym_settings: service_role DELETE
+-- gym_settings: service_role INSERT
+-- gym_settings: service_role REFERENCES
+-- gym_settings: service_role SELECT
+-- gym_settings: service_role TRIGGER
+-- gym_settings: service_role TRUNCATE
+-- gym_settings: service_role UPDATE
+-- media_health_issues: anon DELETE
+-- media_health_issues: anon INSERT
+-- media_health_issues: anon REFERENCES
+-- media_health_issues: anon SELECT
+-- media_health_issues: anon TRIGGER
+-- media_health_issues: anon TRUNCATE
+-- media_health_issues: anon UPDATE
+-- media_health_issues: authenticated DELETE
+-- media_health_issues: authenticated INSERT
+-- media_health_issues: authenticated REFERENCES
+-- media_health_issues: authenticated SELECT
+-- media_health_issues: authenticated TRIGGER
+-- media_health_issues: authenticated TRUNCATE
+-- media_health_issues: authenticated UPDATE
+-- media_health_issues: service_role DELETE
+-- media_health_issues: service_role INSERT
+-- media_health_issues: service_role REFERENCES
+-- media_health_issues: service_role SELECT
+-- media_health_issues: service_role TRIGGER
+-- media_health_issues: service_role TRUNCATE
+-- media_health_issues: service_role UPDATE
+-- provider_acquisition_requests: anon DELETE
+-- provider_acquisition_requests: anon INSERT
+-- provider_acquisition_requests: anon REFERENCES
+-- provider_acquisition_requests: anon SELECT
+-- provider_acquisition_requests: anon TRIGGER
+-- provider_acquisition_requests: anon TRUNCATE
+-- provider_acquisition_requests: anon UPDATE
+-- provider_acquisition_requests: authenticated DELETE
+-- provider_acquisition_requests: authenticated INSERT
+-- provider_acquisition_requests: authenticated REFERENCES
+-- provider_acquisition_requests: authenticated SELECT
+-- provider_acquisition_requests: authenticated TRIGGER
+-- provider_acquisition_requests: authenticated TRUNCATE
+-- provider_acquisition_requests: authenticated UPDATE
+-- provider_acquisition_requests: service_role DELETE
+-- provider_acquisition_requests: service_role INSERT
+-- provider_acquisition_requests: service_role REFERENCES
+-- provider_acquisition_requests: service_role SELECT
+-- provider_acquisition_requests: service_role TRIGGER
+-- provider_acquisition_requests: service_role TRUNCATE
+-- provider_acquisition_requests: service_role UPDATE
+-- provider_content_ownership: anon DELETE
+-- provider_content_ownership: anon INSERT
+-- provider_content_ownership: anon REFERENCES
+-- provider_content_ownership: anon SELECT
+-- provider_content_ownership: anon TRIGGER
+-- provider_content_ownership: anon TRUNCATE
+-- provider_content_ownership: anon UPDATE
+-- provider_content_ownership: authenticated DELETE
+-- provider_content_ownership: authenticated INSERT
+-- provider_content_ownership: authenticated REFERENCES
+-- provider_content_ownership: authenticated SELECT
+-- provider_content_ownership: authenticated TRIGGER
+-- provider_content_ownership: authenticated TRUNCATE
+-- provider_content_ownership: authenticated UPDATE
+-- provider_content_ownership: service_role DELETE
+-- provider_content_ownership: service_role INSERT
+-- provider_content_ownership: service_role REFERENCES
+-- provider_content_ownership: service_role SELECT
+-- provider_content_ownership: service_role TRIGGER
+-- provider_content_ownership: service_role TRUNCATE
+-- provider_content_ownership: service_role UPDATE
+-- provider_entitlements: anon DELETE
+-- provider_entitlements: anon INSERT
+-- provider_entitlements: anon REFERENCES
+-- provider_entitlements: anon SELECT
+-- provider_entitlements: anon TRIGGER
+-- provider_entitlements: anon TRUNCATE
+-- provider_entitlements: anon UPDATE
+-- provider_entitlements: authenticated DELETE
+-- provider_entitlements: authenticated INSERT
+-- provider_entitlements: authenticated REFERENCES
+-- provider_entitlements: authenticated SELECT
+-- provider_entitlements: authenticated TRIGGER
+-- provider_entitlements: authenticated TRUNCATE
+-- provider_entitlements: authenticated UPDATE
+-- provider_entitlements: service_role DELETE
+-- provider_entitlements: service_role INSERT
+-- provider_entitlements: service_role REFERENCES
+-- provider_entitlements: service_role SELECT
+-- provider_entitlements: service_role TRIGGER
+-- provider_entitlements: service_role TRUNCATE
+-- provider_entitlements: service_role UPDATE
+-- provider_invites: anon DELETE
+-- provider_invites: anon INSERT
+-- provider_invites: anon REFERENCES
+-- provider_invites: anon SELECT
+-- provider_invites: anon TRIGGER
+-- provider_invites: anon TRUNCATE
+-- provider_invites: anon UPDATE
+-- provider_invites: authenticated DELETE
+-- provider_invites: authenticated INSERT
+-- provider_invites: authenticated REFERENCES
+-- provider_invites: authenticated SELECT
+-- provider_invites: authenticated TRIGGER
+-- provider_invites: authenticated TRUNCATE
+-- provider_invites: authenticated UPDATE
+-- provider_invites: service_role DELETE
+-- provider_invites: service_role INSERT
+-- provider_invites: service_role REFERENCES
+-- provider_invites: service_role SELECT
+-- provider_invites: service_role TRIGGER
+-- provider_invites: service_role TRUNCATE
+-- provider_invites: service_role UPDATE
+-- provider_media_assets: anon DELETE
+-- provider_media_assets: anon INSERT
+-- provider_media_assets: anon REFERENCES
+-- provider_media_assets: anon SELECT
+-- provider_media_assets: anon TRIGGER
+-- provider_media_assets: anon TRUNCATE
+-- provider_media_assets: anon UPDATE
+-- provider_media_assets: authenticated DELETE
+-- provider_media_assets: authenticated INSERT
+-- provider_media_assets: authenticated REFERENCES
+-- provider_media_assets: authenticated SELECT
+-- provider_media_assets: authenticated TRIGGER
+-- provider_media_assets: authenticated TRUNCATE
+-- provider_media_assets: authenticated UPDATE
+-- provider_media_assets: service_role DELETE
+-- provider_media_assets: service_role INSERT
+-- provider_media_assets: service_role REFERENCES
+-- provider_media_assets: service_role SELECT
+-- provider_media_assets: service_role TRIGGER
+-- provider_media_assets: service_role TRUNCATE
+-- provider_media_assets: service_role UPDATE
+-- provider_members: anon DELETE
+-- provider_members: anon INSERT
+-- provider_members: anon REFERENCES
+-- provider_members: anon SELECT
+-- provider_members: anon TRIGGER
+-- provider_members: anon TRUNCATE
+-- provider_members: anon UPDATE
+-- provider_members: authenticated DELETE
+-- provider_members: authenticated INSERT
+-- provider_members: authenticated REFERENCES
+-- provider_members: authenticated SELECT
+-- provider_members: authenticated TRIGGER
+-- provider_members: authenticated TRUNCATE
+-- provider_members: authenticated UPDATE
+-- provider_members: service_role DELETE
+-- provider_members: service_role INSERT
+-- provider_members: service_role REFERENCES
+-- provider_members: service_role SELECT
+-- provider_members: service_role TRIGGER
+-- provider_members: service_role TRUNCATE
+-- provider_members: service_role UPDATE
+-- provider_onboarding_applications: authenticated SELECT
+-- provider_onboarding_applications: service_role DELETE
+-- provider_onboarding_applications: service_role INSERT
+-- provider_onboarding_applications: service_role REFERENCES
+-- provider_onboarding_applications: service_role SELECT
+-- provider_onboarding_applications: service_role TRIGGER
+-- provider_onboarding_applications: service_role TRUNCATE
+-- provider_onboarding_applications: service_role UPDATE
+-- provider_storefronts: anon DELETE
+-- provider_storefronts: anon INSERT
+-- provider_storefronts: anon REFERENCES
+-- provider_storefronts: anon SELECT
+-- provider_storefronts: anon TRIGGER
+-- provider_storefronts: anon TRUNCATE
+-- provider_storefronts: anon UPDATE
+-- provider_storefronts: authenticated DELETE
+-- provider_storefronts: authenticated INSERT
+-- provider_storefronts: authenticated REFERENCES
+-- provider_storefronts: authenticated SELECT
+-- provider_storefronts: authenticated TRIGGER
+-- provider_storefronts: authenticated TRUNCATE
+-- provider_storefronts: authenticated UPDATE
+-- provider_storefronts: service_role DELETE
+-- provider_storefronts: service_role INSERT
+-- provider_storefronts: service_role REFERENCES
+-- provider_storefronts: service_role SELECT
+-- provider_storefronts: service_role TRIGGER
+-- provider_storefronts: service_role TRUNCATE
+-- provider_storefronts: service_role UPDATE
+-- providers: anon DELETE
+-- providers: anon INSERT
+-- providers: anon REFERENCES
+-- providers: anon SELECT
+-- providers: anon TRIGGER
+-- providers: anon TRUNCATE
+-- providers: anon UPDATE
+-- providers: authenticated DELETE
+-- providers: authenticated INSERT
+-- providers: authenticated REFERENCES
+-- providers: authenticated SELECT
+-- providers: authenticated TRIGGER
+-- providers: authenticated TRUNCATE
+-- providers: authenticated UPDATE
+-- providers: service_role DELETE
+-- providers: service_role INSERT
+-- providers: service_role REFERENCES
+-- providers: service_role SELECT
+-- providers: service_role TRIGGER
+-- providers: service_role TRUNCATE
+-- providers: service_role UPDATE
+-- shared_exercises: anon SELECT
+-- shared_exercises: authenticated DELETE
+-- shared_exercises: authenticated INSERT
+-- shared_exercises: authenticated SELECT
+-- shared_exercises: authenticated UPDATE
+-- shared_exercises: service_role DELETE
+-- shared_exercises: service_role INSERT
+-- shared_exercises: service_role REFERENCES
+-- shared_exercises: service_role SELECT
+-- shared_exercises: service_role TRIGGER
+-- shared_exercises: service_role TRUNCATE
+-- shared_exercises: service_role UPDATE
+-- user_program_status: anon DELETE
+-- user_program_status: anon INSERT
+-- user_program_status: anon REFERENCES
+-- user_program_status: anon SELECT
+-- user_program_status: anon TRIGGER
+-- user_program_status: anon TRUNCATE
+-- user_program_status: anon UPDATE
+-- user_program_status: authenticated DELETE
+-- user_program_status: authenticated INSERT
+-- user_program_status: authenticated REFERENCES
+-- user_program_status: authenticated SELECT
+-- user_program_status: authenticated TRIGGER
+-- user_program_status: authenticated TRUNCATE
+-- user_program_status: authenticated UPDATE
+-- user_program_status: service_role DELETE
+-- user_program_status: service_role INSERT
+-- user_program_status: service_role REFERENCES
+-- user_program_status: service_role SELECT
+-- user_program_status: service_role TRIGGER
+-- user_program_status: service_role TRUNCATE
+-- user_program_status: service_role UPDATE
+-- DEFAULT PRIVILEGES
+-- postgres public S: {postgres=rwU/postgres,anon=rwU/postgres,authenticated=rwU/postgres,service_role=rwU/postgres}
+-- postgres public f: {postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+-- postgres public r: {postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
+-- postgres storage S: {postgres=rwU/postgres,anon=rwU/postgres,authenticated=rwU/postgres,service_role=rwU/postgres}
+-- postgres storage f: {postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}
+-- postgres storage r: {postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres}
+-- supabase_admin extensions S: {postgres=r*w*U*/supabase_admin}
+-- supabase_admin extensions f: {postgres=X*/supabase_admin}
+-- supabase_admin extensions r: {postgres=a*r*w*d*D*x*t*m*/supabase_admin}
+-- supabase_admin graphql S: {postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}
+-- supabase_admin graphql f: {postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}
+-- supabase_admin graphql r: {postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}
+-- supabase_admin graphql_public S: {postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}
+-- supabase_admin graphql_public f: {postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}
+-- supabase_admin graphql_public r: {postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}
+-- supabase_admin public S: {postgres=rwU/supabase_admin,anon=rwU/supabase_admin,authenticated=rwU/supabase_admin,service_role=rwU/supabase_admin}
+-- supabase_admin public f: {postgres=X/supabase_admin,anon=X/supabase_admin,authenticated=X/supabase_admin,service_role=X/supabase_admin}
+-- supabase_admin public r: {postgres=arwdDxtm/supabase_admin,anon=arwdDxtm/supabase_admin,authenticated=arwdDxtm/supabase_admin,service_role=arwdDxtm/supabase_admin}
+-- supabase_admin realtime S: {postgres=rwU/supabase_admin,dashboard_user=rwU/supabase_admin}
+-- supabase_admin realtime f: {postgres=X/supabase_admin,dashboard_user=X/supabase_admin}
+-- supabase_admin realtime r: {postgres=a*r*wdDxtm/supabase_admin,dashboard_user=arwdDxtm/supabase_admin}
+-- supabase_auth_admin auth S: {postgres=rwU/supabase_auth_admin,dashboard_user=rwU/supabase_auth_admin}
+-- supabase_auth_admin auth f: {postgres=X/supabase_auth_admin,dashboard_user=X/supabase_auth_admin}
+-- supabase_auth_admin auth r: {postgres=arwdDxtm/supabase_auth_admin,dashboard_user=arwdDxtm/supabase_auth_admin}
