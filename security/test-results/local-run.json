@@ -1,0 +1,562 @@
+{
+  "scope": "Reconstructed public schema + real PostgreSQL roles + local PostgREST. Auth adapter, not full Supabase Auth.",
+  "dbImage": "postgres:15.15-alpine@sha256:1d1095b0503145be79c79239372aefadfacf6b7c33c9245bbf99ce4b6b89c737",
+  "apiImage": "postgrest/postgrest:v12.2.3@sha256:729bf65c733b73f5b52777f0e4b853f22ed73aa67a22d38269d289779b0a8401",
+  "node": "v22.11.0",
+  "postgres": "15.15",
+  "passed": 134,
+  "failed": 0,
+  "inputs": {
+    "security/verified-schema/README.md": "7661a934367022afa0ce9fafa21865ad9e05e6e0ce92968dbe064ca13ba1b730",
+    "security/verified-schema/catalog.json": "b9aa6283d36037eda4549de9293e1a316a1aed1f7f053ac059d34419ade2f182",
+    "security/verified-schema/function-definitions.sql": "0a4461da8e3178fdb2b229fc86bbbcad305dfae928bd28c9d80d4ffd2e6971c0",
+    "security/verified-schema/policies-and-grants.sql": "d0898545b56b04460074486e9d6453bca4fe0db897dd98d6962090a0fa5e0eb8",
+    "security/verified-schema/schema.sql": "dd5871b5fac89293f839dcca89d80fa28ae65e2821f0157619ea8605b36ac108",
+    "security/verified-schema/storage-and-api-boundaries.md": "ec3fe22be32f04797bbfc04f13ff1fe0f61da0c1b1f300edc2c3fc5542fb4daa",
+    "security/proposals/function-execute.sql": "e4b226cf99b5ebe9be8c62b7b92ffe0f88a9dffa164d43d1d8fe0628df9cc275",
+    "security/proposals/entitlement-window.sql": "809dd18e0e66a056e7307935c168c69c7a140d35914939192535aaf64ba7d36c",
+    "security/proposals/media-access.sql": "a2d3cff7a6bad2eede16479018d106297a9250a35c30518da3a76a3c24ebea3a",
+    "security/proposals/invitation-expiration.sql": "162385cb6442197c6c67cf8aab3eedb459f110ce75df855d9da5fe99c8cb13d2",
+    "security/local/auth-adapter.sql": "f891fe22e7e84865ed64ea2c8273d4d114d43025b47c7d985132156dfc589e0f",
+    "security/local/catalog-loader.mjs": "8692ce31017fd524f46ae1512e6844585b45723ff612900f11362aeafee16a42",
+    "scripts/test-provider-security.mjs": "51c1959d96a2a2c6d008aca7c61118a303a35e2d8847575a83f8b2807c8a6f10"
+  },
+  "results": [
+    {
+      "label": "baseline reconstructs all 18 public tables",
+      "passed": true
+    },
+    {
+      "label": "baseline reconstructs all 39 actual policies",
+      "passed": true
+    },
+    {
+      "label": "baseline reconstructs all 66 constraints",
+      "passed": true
+    },
+    {
+      "label": "baseline reconstructs all 43 indexes",
+      "passed": true
+    },
+    {
+      "label": "baseline enables RLS on all 18 tables",
+      "passed": true
+    },
+    {
+      "label": "baseline reconstructs all 11 actual functions",
+      "passed": true
+    },
+    {
+      "label": "actual role anon has no RLS bypass",
+      "passed": true
+    },
+    {
+      "label": "actual role free has no RLS bypass",
+      "passed": true
+    },
+    {
+      "label": "actual role subscriber has no RLS bypass",
+      "passed": true
+    },
+    {
+      "label": "actual role owner has no RLS bypass",
+      "passed": true
+    },
+    {
+      "label": "actual role editor has no RLS bypass",
+      "passed": true
+    },
+    {
+      "label": "actual role admin has no RLS bypass",
+      "passed": true
+    },
+    {
+      "label": "actual role analyst has no RLS bypass",
+      "passed": true
+    },
+    {
+      "label": "actual role platform has no RLS bypass",
+      "passed": true
+    },
+    {
+      "label": "actual role recipient has no RLS bypass",
+      "passed": true
+    },
+    {
+      "label": "actual role wrong has no RLS bypass",
+      "passed": true
+    },
+    {
+      "label": "actual role applicant has no RLS bypass",
+      "passed": true
+    },
+    {
+      "label": "actual role foreignOwner has no RLS bypass",
+      "passed": true
+    },
+    {
+      "label": "BASELINE API weakness: free member receives paid asset row",
+      "passed": true
+    },
+    {
+      "label": "BASELINE weakness: free member reads paid media when samples enabled",
+      "passed": true
+    },
+    {
+      "label": "BASELINE weakness: unapproved preview readable",
+      "passed": true
+    },
+    {
+      "label": "BASELINE weakness: orphan media readable",
+      "passed": true
+    },
+    {
+      "label": "BASELINE weakness: inactive provider preview readable",
+      "passed": true
+    },
+    {
+      "label": "BASELINE weakness: expired active subscription reads paid media",
+      "passed": true
+    },
+    {
+      "label": "BASELINE weakness: future active subscription reads paid media",
+      "passed": true
+    },
+    {
+      "label": "BASELINE weakness: old pending invite accepted",
+      "passed": true
+    },
+    {
+      "label": "BASELINE protection: wrong email rejected",
+      "passed": true
+    },
+    {
+      "label": "BASELINE protection: revoked invitation rejected",
+      "passed": true
+    },
+    {
+      "label": "BASELINE weakness: platform admin helper returns NULL for missing role claim",
+      "passed": true
+    },
+    {
+      "label": "BASELINE weakness: free user removes another provider member via NULL guard",
+      "passed": true
+    },
+    {
+      "label": "BASELINE weakness: free user creates provider invite via NULL guard",
+      "passed": true
+    },
+    {
+      "label": "BASELINE weakness: free user approves onboarding via NULL guard",
+      "passed": true
+    },
+    {
+      "label": "BASELINE weakness: authenticated TRUNCATE bypasses RLS",
+      "passed": true
+    },
+    {
+      "label": "rollback rehearsal restores old preview policy",
+      "passed": true
+    },
+    {
+      "label": "rollback rehearsal restores original helper semantics",
+      "passed": true
+    },
+    {
+      "label": "rollback rehearsal removes uncommitted expiry column",
+      "passed": true
+    },
+    {
+      "label": "corrected admin helper is false, not NULL",
+      "passed": true
+    },
+    {
+      "label": "editable user_metadata cannot grant database admin",
+      "passed": true
+    },
+    {
+      "label": "free user cannot remove member",
+      "passed": true
+    },
+    {
+      "label": "free user cannot create invite",
+      "passed": true
+    },
+    {
+      "label": "authenticated cannot TRUNCATE private circuits",
+      "passed": true
+    },
+    {
+      "label": "anon cannot TRUNCATE private circuits",
+      "passed": true
+    },
+    {
+      "label": "anon still reads public exercise library",
+      "passed": true
+    },
+    {
+      "label": "anon sees no raw protected assets",
+      "passed": true
+    },
+    {
+      "label": "free user denied protected asset 202",
+      "passed": true
+    },
+    {
+      "label": "free user denied protected asset 204",
+      "passed": true
+    },
+    {
+      "label": "free user denied protected asset 205",
+      "passed": true
+    },
+    {
+      "label": "free user denied protected asset 206",
+      "passed": true
+    },
+    {
+      "label": "approved preview remains available",
+      "passed": true
+    },
+    {
+      "label": "owner retains own media access",
+      "passed": true
+    },
+    {
+      "label": "admin retains own media access",
+      "passed": true
+    },
+    {
+      "label": "editor retains own media access",
+      "passed": true
+    },
+    {
+      "label": "platform retains own media access",
+      "passed": true
+    },
+    {
+      "label": "analyst does not gain paid content by membership alone",
+      "passed": true
+    },
+    {
+      "label": "editor cannot read foreign paid media",
+      "passed": true
+    },
+    {
+      "label": "active/valid entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "active/expired entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "active/future entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "active/open entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "trialing/valid entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "trialing/expired entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "trialing/future entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "trialing/open entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "comped/valid entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "comped/expired entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "comped/future entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "comped/open entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "canceled/valid entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "canceled/expired entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "canceled/future entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "canceled/open entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "expired/valid entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "expired/expired entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "expired/future entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "expired/open entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "past_due/valid entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "past_due/expired entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "past_due/future entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "past_due/open entitlement media decision",
+      "passed": true
+    },
+    {
+      "label": "strict interval boundary '2026-01-02','2026-01-03','2026-01-03'",
+      "passed": true
+    },
+    {
+      "label": "strict interval boundary '2026-01-03','2026-01-02','2026-01-01'",
+      "passed": true
+    },
+    {
+      "label": "strict interval boundary NULL,'2026-01-02','2026-01-01'",
+      "passed": true
+    },
+    {
+      "label": "expired invite denied after correction",
+      "passed": true
+    },
+    {
+      "label": "expired invite email claim denied",
+      "passed": true
+    },
+    {
+      "label": "old invite retains original age in backfill",
+      "passed": true
+    },
+    {
+      "label": "owner create invite RPC still returns UUID",
+      "passed": true
+    },
+    {
+      "label": "fresh invite wrong recipient still rejected",
+      "passed": true
+    },
+    {
+      "label": "accepted invite replay rejected",
+      "passed": true
+    },
+    {
+      "label": "owner cannot demote another owner through role RPC",
+      "passed": true
+    },
+    {
+      "label": "owner cannot remove owner through member RPC",
+      "passed": true
+    },
+    {
+      "label": "owner can update an editor",
+      "passed": true
+    },
+    {
+      "label": "owner can remove an editor",
+      "passed": true
+    },
+    {
+      "label": "provider admin cannot manage owner-only team operations",
+      "passed": true
+    },
+    {
+      "label": "foreign owner cannot edit another provider team",
+      "passed": true
+    },
+    {
+      "label": "editor own storefront edit allowed",
+      "passed": true
+    },
+    {
+      "label": "editor foreign storefront edit hidden by RLS",
+      "passed": true
+    },
+    {
+      "label": "editor cannot reassign storefront provider",
+      "passed": true
+    },
+    {
+      "label": "private circuits hidden from other subscriber",
+      "passed": true
+    },
+    {
+      "label": "subscriber retains own circuit",
+      "passed": true
+    },
+    {
+      "label": "platform moderator does not bypass private circuit ownership",
+      "passed": true
+    },
+    {
+      "label": "subscriber cannot reassign circuit ownership",
+      "passed": true
+    },
+    {
+      "label": "subscriber cannot grant own entitlement",
+      "passed": true
+    },
+    {
+      "label": "subscriber cannot mutate own entitlement",
+      "passed": true
+    },
+    {
+      "label": "onboarding applicant can submit matching identity",
+      "passed": true
+    },
+    {
+      "label": "onboarding wrong email denied",
+      "passed": true
+    },
+    {
+      "label": "free member cannot review onboarding",
+      "passed": true
+    },
+    {
+      "label": "platform can approve onboarding and assign owner",
+      "passed": true
+    },
+    {
+      "label": "anon EXECUTE removed for current_provider_role(uuid)",
+      "passed": true
+    },
+    {
+      "label": "anon EXECUTE removed for is_platform_admin()",
+      "passed": true
+    },
+    {
+      "label": "anon EXECUTE removed for provider_has_capability(uuid,text)",
+      "passed": true
+    },
+    {
+      "label": "concurrent acceptance exactly one success",
+      "passed": true
+    },
+    {
+      "label": "concurrent acceptance replay rejects second caller",
+      "passed": true
+    },
+    {
+      "label": "concurrent acceptance creates exactly one membership",
+      "passed": true
+    },
+    {
+      "label": "concurrent acceptance marks invite accepted",
+      "passed": true
+    },
+    {
+      "label": "existing member role cannot be changed via invite",
+      "passed": true
+    },
+    {
+      "label": "accept/revoke race leaves consistent membership and status",
+      "passed": true
+    },
+    {
+      "label": "API anon shared_exercises?select=record_id status",
+      "passed": true
+    },
+    {
+      "label": "API anon shared_exercises?select=record_id row count",
+      "passed": true
+    },
+    {
+      "label": "API anon provider_media_assets?select=id status",
+      "passed": true
+    },
+    {
+      "label": "API anon provider_media_assets?select=id row count",
+      "passed": true
+    },
+    {
+      "label": "API free provider_media_assets?id=eq.00000000-0000-4000-8000-000000000202&select=id status",
+      "passed": true
+    },
+    {
+      "label": "API free provider_media_assets?id=eq.00000000-0000-4000-8000-000000000202&select=id row count",
+      "passed": true
+    },
+    {
+      "label": "API free provider_media_assets?id=eq.00000000-0000-4000-8000-000000000203&select=id status",
+      "passed": true
+    },
+    {
+      "label": "API free provider_media_assets?id=eq.00000000-0000-4000-8000-000000000203&select=id row count",
+      "passed": true
+    },
+    {
+      "label": "API anon unauthorized team mutation rejected",
+      "passed": true
+    },
+    {
+      "label": "API free unauthorized team mutation rejected",
+      "passed": true
+    },
+    {
+      "label": "API editor unauthorized team mutation rejected",
+      "passed": true
+    },
+    {
+      "label": "API admin unauthorized team mutation rejected",
+      "passed": true
+    },
+    {
+      "label": "API foreignOwner unauthorized team mutation rejected",
+      "passed": true
+    },
+    {
+      "label": "API owner can manage permitted team roles",
+      "passed": true
+    },
+    {
+      "label": "API owner role update returns true",
+      "passed": true
+    },
+    {
+      "label": "API free user cannot approve onboarding",
+      "passed": true
+    },
+    {
+      "label": "API platform onboarding approval preserved",
+      "passed": true
+    },
+    {
+      "label": "API onboarding creates pending private provider and owner atomically",
+      "passed": true
+    }
+  ]
+}

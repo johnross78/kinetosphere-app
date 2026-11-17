@@ -11,7 +11,9 @@
     "cap:open:android": "npx cap open android",
     "legacy:apply-rc38-layout": "node scripts/apply-player-layout.mjs",
     "ios:prepare:web": "node scripts/prepare-ios.mjs --web-only",
-    "ios:prepare": "npm test && node scripts/prepare-ios.mjs"
+    "ios:prepare": "npm test && node scripts/prepare-ios.mjs",
+    "test:security:preflight": "node scripts/check-security-evidence.mjs",
+    "test:security:database": "node scripts/test-provider-security.mjs"
   },
   "dependencies": {
     "@capacitor/core": "8.0.0",
