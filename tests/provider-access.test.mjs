@@ -74,10 +74,9 @@ test('client admin visibility uses app_metadata; editable user_metadata does not
   assert.equal(client({ user: { user_metadata: { admin: true } } }).providerCan('provider-b', 'members:manage'), false);
   assert.equal(client({ user: { app_metadata: { admin: true } } }).providerCan('provider-b', 'members:manage'), true);
 });
-test('database evidence gate explicitly blocks rather than reporting a passing RLS test', () => {
-  assert.throws(() => execFileSync(process.execPath, [new URL('../scripts/check-security-evidence.mjs', import.meta.url).pathname], { stdio: 'pipe' }), error => {
-    assert.equal(error.status, 2);
-    assert.match(error.stderr.toString(), /BLOCKED:.*No database tests ran/);
-    return true;
-  });
+test('recorded database report is current and does not claim production certification', () => {
+  const output = execFileSync(process.execPath, [new URL('../scripts/check-security-evidence.mjs', import.meta.url).pathname], { encoding: 'utf8' });
+  assert.match(output, /RECORDED LOCAL VALIDATION/);
+  assert.match(output, /did not rerun/);
+  assert.match(output, /Production-equivalent certification remains BLOCKED/);
 });

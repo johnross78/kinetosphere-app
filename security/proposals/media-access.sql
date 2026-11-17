@@ -1,36 +1,27 @@
--- REVIEW-ONLY MIGRATION DRAFT. Every __verified_* token is unresolved.
-BEGIN;
-DO $$ BEGIN
-  RAISE EXCEPTION 'BLOCKED: exact policy inventory, relation keys/types, helper signatures and free/included-provider semantics are missing';
-END $$;
-
--- A RESTRICTIVE fence intersects existing permissive policies, preventing an old
--- broad preview policy from winning through PostgreSQL permissive-policy OR.
--- Existing policies must still supply a permissive grant for each intended role.
--- Anonymous preview metadata belongs in a sanitized endpoint, not this raw table.
-CREATE POLICY ks_media_authorization_fence
-ON public.provider_media_assets AS RESTRICTIVE
-FOR SELECT TO authenticated
-USING (
-  __verified_platform_admin_for_current_user__()
-  OR __verified_provider_media_capability_for_current_user__(provider_id)
-  OR (
-    __verified_provider_is_active__(provider_id)
-    AND (
-      __verified_effective_current_user_entitlement__(provider_id, statement_timestamp())
-      OR (
-        preview_allowed IS TRUE
-        AND __verified_provider_discoverable_and_samples_enabled__(provider_id)
-        AND __verified_asset_is_sanitized_preview__(id)
-      )
-    )
-  )
-);
--- id, provider_id, preview_allowed types/constraints and helper implementations
--- must be verified before replacing placeholders. Add a matching anon fence or
--- revoke raw-table SELECT from anon after checking current policy dependencies.
--- Do not blindly remove policies or grant free/included access to every asset.
--- Review INSERT/UPDATE/DELETE WITH CHECK and provider reassignment separately.
--- Field-level sensitive URLs require a sanitized projection/signed-media boundary;
--- RLS filters rows, not secret columns within an otherwise readable row.
-ROLLBACK;
+-- Correct the exact permissive SELECT policy; leave existing scoped DML policy.
+-- Existing preview_allowed=true rows need a separate approval inventory before rollout.
+ALTER TABLE public.provider_media_assets ALTER COLUMN preview_allowed SET DEFAULT false;
+CREATE FUNCTION kinetosphere_security.media_read_allowed(p_provider_id uuid,p_preview_allowed boolean,p_asset_type text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
+ SELECT auth.uid() IS NOT NULL AND coalesce(
+  public.is_platform_admin()
+  OR public.provider_has_capability(p_provider_id,'media:edit')
+  OR EXISTS (
+   SELECT 1 FROM public.providers p WHERE p.id=p_provider_id AND p.status='active'
+   AND (
+    EXISTS (SELECT 1 FROM public.provider_entitlements e
+     WHERE e.provider_id=p.id AND e.user_id=auth.uid()
+     AND kinetosphere_security.entitlement_effective(e.status,e.starts_at,e.ends_at,statement_timestamp()))
+    OR (p.discoverable AND p.free_sample_enabled AND p_preview_allowed IS TRUE
+        AND p_asset_type IN ('preview_video','poster','thumbnail','highlight_reel'))
+   )
+  ), false);
+$$;
+REVOKE ALL ON FUNCTION kinetosphere_security.media_read_allowed(uuid,boolean,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION kinetosphere_security.media_read_allowed(uuid,boolean,text) TO authenticated;
+DROP POLICY media_read_entitled_member_or_discoverable ON public.provider_media_assets;
+CREATE POLICY media_read_entitled_member_or_discoverable ON public.provider_media_assets
+AS PERMISSIVE FOR SELECT TO authenticated
+USING (kinetosphere_security.media_read_allowed(provider_id,preview_allowed,asset_type));
+-- No blanket orphan/null-provider grant. Analysts require an independent entitlement
+-- or approved preview. Own provider media editors and platform moderation preserved.

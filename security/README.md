@@ -1,194 +1,193 @@
-# Provider security review and proposed corrections
+# Provider authorization review — reconciled with actual evidence
 
-Status: **review-only; database enforcement remains unverified and unmodified**.
-Base: `03c31a4d15f3b4cee11cc65a871831a4008fd408`, including merged PRs #1/#2.
-No live Supabase connection, migrations, deployed functions, payment changes, or
-media changes were made. All production application/build/native sources remain
-unchanged. No user records or credentials are included.
+PR #3 is a proposal, not permission to deploy. No live connection or deployment was
+made. The immutable sanitized snapshot in `verified-schema/` was supplied by the
+owner at branch commit `d608961`. All six files were reviewed. The snapshot's
+anonymized admin UUID is used only in the local reconstruction/fixtures; none of
+the reviewed SQL changes contains that value. Do not deploy the reconstruction.
 
-## Evidence and severity
+## What is now established
 
-The assignment supplies a prior read-only audit: all 18 public tables have RLS;
-media preview access is overly broad; entitlement dates are inconsistently checked;
-three SECURITY DEFINER helpers have anonymous EXECUTE; invitations lack enforced
-expiration. These are **owner-supplied findings**, not independently reproduced.
-RLS being enabled does not establish that its policies are correct.
+`npm run test:security:database` reconstructs and tests the supplied public catalog
+inside disposable Docker containers. It reproduces baseline vulnerabilities first,
+then applies the corrected SQL atomically and runs actual-role/PostgREST checks.
+See `test-results/local-run.json` for exact assertion names, pinned image digests,
+engine versions, and SHA-256 fingerprints of evidence, SQL and harness sources.
+`npm run test:security:preflight` verifies that recorded report is current; it does
+not rerun database tests or certify production.
 
-| Severity | Finding | Evidence and practical consequence |
+The application, native player, timer behavior, Supabase project, deployment settings,
+payment processing and Option 6.2 design branch remain unchanged.
+
+## Corrections to the earlier review
+
+- Entitlements already have UNIQUE(user_id, provider_id), six constrained text
+  statuses, starts_at NOT NULL with now() default, and nullable ends_at. Multiple
+  grants/null starts are not an existing schema ambiguity; invalid date intervals
+  remain possible and are denied by the new predicate.
+- Invite acceptance already uses SELECT FOR UPDATE, exact lowercased JWT-email
+  matching, pending-state/replay checks, rejection of existing membership, and a
+  unique membership constraint. Creation revokes prior pending invitations and a
+  partial unique index limits pending provider/email duplicates. These controls
+  were preserved rather than replaced. Missing expiry was reproduced.
+- Role/capability checks already exist server-side. Admin/editor/analyst cannot
+  normally manage owner-only team operations; owner removal/demotion is guarded.
+  A newly reproduced NULL-boolean flaw undermines several RPC guards (below).
+- Mutation RPCs already restrict EXECUTE to authenticated/service_role. Only the
+  three helper functions also grant PUBLIC/anon EXECUTE; no anonymous mutation-RPC
+  exposure was assumed. Anon discovery is currently only shared_exercises; provider
+  catalog/storefront/media policies are authenticated-only.
+- All 18 public tables have RLS, 39 policies and no triggers. There are no public
+  views or Storage buckets/objects in the evidence. This is not full Auth/Storage
+  DDL, dashboard configuration, or external-origin authorization evidence.
+
+## Findings, reproduction and corrections
+
+| Severity | Reproduced baseline | Corrected local result |
 |---|---|---|
-| High | Provider free samples can expose paid media rows | Supplied audit: asset preview_allowed is not required; enforce approval per asset, not per provider alone |
-| High | Expired/future access can remain valid | Supplied media-policy finding; client providerAccessState checks status only |
-| High, conditional | External URLs may bypass all future RLS checks | Client selects external_url, downloads it directly, and embeds Stream IDs; actual origin privacy/signing is unknown |
-| High | Cached/saved playback does not reauthorize | Repository paths below; rights cannot be revoked by hiding Builder cards |
-| High | Invitation lifetime/replay and address enforcement need verification | No expiry per supplied audit; RPC body unavailable, so other acceptance protections cannot be assumed absent or present |
-| High, conditional | Privileged RPCs may expose unauthorized operations | Broad EXECUTE is reported; exploitability depends on actor/tenant checks in missing function bodies |
-| Medium | UI policy differs across entry points and provider mapping | Unknown program provider passes; guest source list is broad; any source tag may grant visibility |
+| Critical | is_platform_admin() returns NULL when app_metadata.role/admin are absent. In PL/pgSQL IF NOT(NULL) does not reject. A free member could create invitations, remove non-owner members and approve onboarding | Admin/capability helpers return strict booleans; RPC checks use IS NOT TRUE. Free callers denied, authorized owner/platform workflows retained |
+| High | Provider samples enable paid source-video rows and unapproved previews for unrelated free members (also reproduced through PostgREST) | Exact SELECT policy replaced; previews require active discoverable sample provider, approved preview flag and preview asset type |
+| High | Expired/future active grants still read paid assets | Date/status predicate evaluated against statement_timestamp(); 24 status/window combinations tested |
+| High | Old pending invitations accepted after eight days | Seven-day expiry backfilled from original created_at and enforced in acceptance and email-claim RPCs |
+| High | Null-provider media globally readable; inactive provider samples readable | Unowned media restricted to platform moderation; inactive subscriber/preview path denied |
+| High, conditional | anon/authenticated have TRUNCATE grants; actual-role TRUNCATE bypasses RLS | TRUNCATE revoked for both roles/PUBLIC on existing public tables. PostgREST does not itself expose a TRUNCATE endpoint; direct SQL privilege was tested |
+| Medium | Three SECURITY DEFINER helpers anonymously executable | Verified overload grants narrowed; anon shared-library reads still work; all 11 function search_paths fixed to empty, qualified objects preserved |
+| High, unverified delivery | Rows contain external_url/storage_path; copied URLs and offline blobs can outlive a database decision | NOT solved by this PR. External-origin token/ACL and offline licensing tests remain blocked |
 
-## Proposed business rules requiring product approval
+The existing ALL media-management policy remains scoped to owner/admin/editor or
+platform admin. It intentionally still permits provider content work even when a
+provider is pending/inactive. Analyst membership no longer supplies full protected
+media read access through the replaced SELECT policy; analysts retain analytics
+permissions and can independently qualify for a preview/subscription. This is a
+reviewable tightening, not a claim that the old schema lacked a role model.
 
-All timestamps use database time and UTC instants. Access windows are half-open:
-`starts_at <= now < ends_at`. Equality at the end denies access. Missing start,
-invalid intervals, unknown status, or missing finite end for paid/trial access deny.
-Existing null starts must be reconciled from trusted records, not silently granted.
+## Explicit authorization matrix (proposed)
 
-| Status | Proposed rule |
-|---|---|
-| active | Valid start and finite, future end required |
-| trialing | Same date checks; trial ends at its stated end, no implicit grace |
-| comped | Valid start; finite end respected, null end allowed only for intentionally open-ended complimentary access |
-| canceled | Cancellation stops renewal; access remains through a finite paid-through ends_at. canceled_at is an audit timestamp, not the cutoff |
-| expired / past_due / unknown | Deny protected access; no undocumented billing grace |
+Discovery here means sanitized published metadata. Current DB discovery remains
+mostly authenticated-only; anonymous provider discovery is not introduced in SQL.
+Circuits store references, never permanent authorization. Roles apply only to their
+provider. Platform moderation does not bypass private gym_circuits ownership.
 
-Immediate revocation must use a verified non-allowlisted terminal state or a
-separately reviewed revocation mechanism. Actual enum values and billing status
-transitions are missing: do not invent a new value in the deployed database.
-Multiple rows for one user/provider must be reviewed: whether any effective grant
-wins, and whether a revocation overrides older rows, needs explicit constraints.
-The client currently collapses rows to one Map entry; uniqueness is unverified.
-
-Invitations: seven days from creation; pending only; exact boundary expires. Resend
-does not extend validity. Reissue creates a new invitation and revokes the old one.
-Old pending invitations expire using original created_at, not migration time.
-Acceptance requires the current authenticated, confirmed exact normalized email,
-one atomic transaction, row locking, an allowed non-owner role, and no owner
-demotion. Accepted/revoked/expired/wrong-address attempts fail without side effects.
-Do not add an expired enum state without inspecting the existing status constraint;
-expiration can be derived from expires_at while retaining pending status.
-
-## Proposed authorization matrix
-
-This describes intended rules, not verified current database behavior. E/A/O roles
-are scoped to their own provider only. Discovery means sanitized published metadata.
-Saving a reference never grants playback. Raw media rows may contain sensitive URLs.
-
-| Persona | Discovery | Explicit previews | Protected media | Saved circuits | Provider administration | Entitlement changes |
+| Persona | Discovery | Previews | Protected media | Saved circuits | Administration | Entitlement mutation |
 |---|---|---|---|---|---|---|
-| Anonymous visitor | Active, discoverable only | Sanitized approved online previews | No | Local guest references only | No | No |
-| Authenticated free member | Same | Approved preview assets only | No paid assets; free/included grants must be explicit | Own circuits only; playback separately checked | Own onboarding application only | No self-grant |
-| Active paid subscriber | Same | Yes | Entitled provider, within dates | Own; each asset reauthorized | No | No self-grant |
-| Expired subscriber | Same | Yes | No | Retain own records; locked items remain references | No | No |
-| Canceled with remaining paid time | Same | Yes | Until ends_at, not canceled_at | Own; reauthorize | No | No |
-| Provider Editor | Same + own draft metadata as allowed | Yes | Own provider for content work | Own, no cross-provider grant | Own storefront/media; no team or billing | No |
-| Provider Administrator | Same + own drafts | Yes | Own provider for content work | Own | Own storefront/media, analytics, team viewing; no owner-only member mutation | No |
-| Provider Owner | Same + own drafts | Yes | Own provider for content work | Own | Own team/invites plus content/analytics; cannot remove/demote owner via current workflows | No subscription self-grant |
-| Platform administrator | Moderation scope | Yes | Authorized moderation | No routine blanket access to subscribers' private circuits | Platform review; audited privileged operations | Audited backend-only grant/revoke workflow |
+| Anonymous | Public shared library; future sanitized provider endpoint | Future sanitized endpoint only; raw assets denied | Denied | Local guest only | Denied | Denied |
+| Authenticated free member | Discoverable catalog | Explicit approved preview types | Denied absent a grant | Own records; playback rechecked | Own onboarding submission | Denied |
+| Active paid subscriber | Same | Yes | Own entitled provider within dates | Own; no perpetual media grant | No provider powers | Denied |
+| Expired subscriber | Same | Yes | Denied | Keep records/notes, lock media | No provider powers | Denied |
+| Canceled, paid time remaining | Same | Yes | Through finite ends_at | Own; playback rechecked | No provider powers | Denied |
+| Provider Editor | Catalog + own provider | Yes | Own content-work assets | Own | Own storefront/media/content | Denied |
+| Provider Administrator | Same | Yes | Own content-work assets | Own | Content/analytics/team view; owner-only team mutations denied | Denied |
+| Provider Owner | Same | Yes | Own content-work assets | Own | Own team/invites/content/analytics; owner cannot be removed/demoted through team RPCs | Denied |
+| Platform administrator | Moderation | Yes | Moderation | No blanket private-circuit access | Platform review and audited administration | Existing platform-admin policy retained; operational auditing remains required |
 
-Analyst is also an existing role: analytics only, no default protected-media or
-membership mutation permission. The current client gives all memberships full
-provider visibility; changing this requires deliberate compatibility review.
-Suspended/inactive providers deny subscriber/preview delivery; moderation access
-is a separate platform capability. Free/included-provider semantics require an
-explicit server grant rule, not a fallback for unknown providers.
+Analyst: analytics, no default protected media or team mutation. Free/included
+provider access currently has no separate database-wide grant in the observed media
+policy; this PR does not invent one. A future explicit grant model is required if
+product intends all such assets to be readable without entitlements or previews.
 
-## Client-side path review and proposed follow-up changes
+## Business rules in the SQL proposal
 
-| Repository path | Current behavior | Proposed correction (not implemented) |
-|---|---|---|
-| www/index.html:2297, 2307–2320 | Platform role uses app_metadata; capability map is provider-scoped | Preserve server-controlled metadata; mirror checks server-side; account for JWT claim freshness |
-| :2632 | exerciseAccessibleForCurrentUser allows any matching source tag | Resolve immutable provider/content ownership, not any source label; fail closed on unknown paid identity |
-| :2638 | providerAccessState ignores dates and grants full access to any member | One effective-access model; capability-scoped members; load dates and server decision |
-| :2676 | programAccessibleForCurrentUser allows unknown provider | Require mapping and asset authorization |
-| :2885–2924 | Guest gets all source keys; entitlement query selects provider_id,status only | Public catalog may remain visible, but protected media cannot rely on guest/client filtering; request effective grants |
-| :4291, :4589 | Filter checks visibility; addToCircuit lacks independent check | Keep circuit references; validate at launch/playback and backend delivery |
-| :4927 | loadProgramToBuilder loads/launches without rechecking access | Recheck at launch and every protected intro/movement |
-| :5389, :6423 | Saved launch/getActiveItems resolve cached exercises without access recheck | Preserve circuit/notes; lock denied items, explain renewal; prevent media delivery |
-| :6184–6219 | Offline query filters offline_allowed, then downloads external_url; manifest has no access expiry | Separate offline grant bound to user/provider/asset/license with expiry; origin protection; refresh and deletion policy |
-| :6214, :6720 | Cached blob takes precedence; offlineAssetForExercise returns by exercise ID only | Account-scoped manifest; check offline validity before blob playback; purge/revoke on identity changes |
-| :6694, :6720 | Stream/YouTube routed directly from IDs | Obtain server-authorized media grant before calling existing player; leave native protocol/geometry untouched |
-| :2387–2535 | Invite list filters pending, no expiry; accept calls RPC | Server enforces expiry/address/atomicity; UI displays expired state and handles denial |
-| :2822 | Storefront writes provider_id from selected provider | RLS and WITH CHECK must reject cross-provider writes/provider reassignment |
+Effective window: `starts_at <= database time < ends_at`. At the end boundary deny;
+inverted/equal intervals deny. Active/trialing/canceled need a finite future end;
+comped may be intentionally open-ended. Expired/past_due deny. Cancellation records
+intent not to renew: canceled_at alone does not terminate remaining paid access.
+These rules require product sign-off. Existing active/trialing rows with null ends
+will lose protected access until reconciled; no blanket backfill invents dates.
 
-Client checks improve UX only. Do not treat a copied exercise, favorite, circuit,
-program ID, preview URL, or offline flag as an authorization credential. No workout
-or video behavior is changed in this PR; characterization tests intentionally show
-existing incorrect access-date behavior as passing historical expectations.
+Invites expire at created_at + seven days, including old pending records; resending
+must not reset the window. Existing create_provider_invite reissues by revoking the
+old row and creating a new one. Acceptance retains its existing transaction, row
+lock, email, replay and membership checks. Email claim also checks expiry. The
+expires_at constraint caps validity and the new default supplies seven days.
+Current acceptance trusts the signed JWT email, not an auth.users confirmation
+lookup. Confirmation/account-change guarantees depend on unavailable Auth settings;
+this PR deliberately does not pretend that missing confirmation data was exported.
 
-## Proposed SQL and missing schema
+preview_allowed currently defaults TRUE. The proposal changes the default to FALSE
+for new assets and excludes source_video from free previews. Existing true flags
+are not proof of explicit approval: review/redact legacy preview rows before any
+rollout. We did not silently reclassify all existing assets or alter their URLs.
 
-`proposals/` contains four deliberately blocked migration drafts covering media,
-entitlement windows, function grants, and invitations. They are outside
-`supabase/migrations`, begin with an unconditional exception, contain unresolved
-`__verified_*` placeholders, and end with rollback. **They are not deployable
-migrations, have not been SQL-runtime tested, and do not constitute a fix.** Do not
-remove guards or move them into migration discovery before verification.
+## Reviewed SQL order and transactional use
 
-Missing: exact DDL/types/constraints/FKs/indexes, every policy expression and grant,
-function overload signatures/bodies/owners/search_path/ACLs/dependencies, exposed
-schemas/views, auth email-confirmation behavior, media origin controls, and provider
-state/billing semantics. Docker is available, but starting an empty database would
-not reconstruct these. No fake RLS schema or passing database test was invented.
+The four existing files in `proposals/` now contain schema-specific SQL rather than
+placeholders. They are outside auto-discovered migrations and require approval:
 
-The media draft uses a restrictive fence so an existing permissive policy cannot
-OR around it. Final policy replacement must consider ALL/SELECT policies, anon and
-authenticated roles, free/included providers, preview asset types, provider status,
-member capabilities, and underlying helper dependencies. A restrictive policy
-alone does not grant access; intended positive paths need permissive grants too.
+1. function-execute.sql — strict helpers/RPC guards, verified EXECUTE ACLs, fixed
+   search_path, existing-table TRUNCATE revocation.
+2. entitlement-window.sql — private, non-exposed predicate schema/helper.
+3. media-access.sql — private current-user media decision helper, default flag,
+   replacement of the exact permissive SELECT policy; DML policy retained.
+4. invitation-expiration.sql — column/backfill/constraint and minimally changed
+   accept/claim RPCs; existing guarantees preserved.
 
-For privileged functions, revoke PUBLIC as well as explicit anon permissions per
-verified overload. Retain required authenticated RPC access, but prove internal
-authorization. Do not globally revoke every public function. RLS may call these
-helpers as anon: removing EXECUTE can break discovery. Default grants depend on
-the actual creator role; audit that role before setting defaults. Prefer private
-helpers, fixed search_path and fully qualified objects; move SECURITY DEFINER only
-with evidence, not as a permission-error workaround.
+Execute all fragments in one transaction, as the local harness does. They are not
+idempotent reapplication scripts: unexpected existing schema/policy state should
+fail. The new media helper is narrowly SECURITY DEFINER because checking provider
+status must work even when provider-catalog RLS hides an entitled private provider.
+It derives identity from auth.uid(), accepts no caller user ID, returns only a
+boolean, uses qualified names/empty search_path, and is not in the public API schema.
+Only authenticated can invoke it through RLS; pure internal predicate is not
+client-callable. Catalog-table/role owners and ACL review remain part of deployment.
 
-## Media delivery and commercial licensing boundaries
+## Client paths remain a separate required correction
 
-An authorized row can reveal durable external_url, storage path, Stream UID or
-source-video location. RLS does not revoke an already copied URL or cached blob.
-Inventory actual origin behavior without putting URLs/credentials in this review.
-Use private storage or authenticated/signed Stream delivery for protected licensed
-media; sanitize preview metadata so preview rows never include master URLs. Use
-short-lived audience/resource-bound grants, cache-control, no protected URLs in
-public catalogs/logs, and test access after expiry/refund/provider suspension.
+No client behavior changed. `www/index.html` still checks status without dates in
+providerAccessState (:2638), and loadProviderAccessState (:2885) selects status only.
+Guests get broad source-key visibility; exerciseAccessibleForCurrentUser (:2632)
+accepts any accessible source tag; unknown program providers pass (:2676).
+Builder filters (:4291) check visibility but addToCircuit (:4589), program launch
+(:4927), saved launch (:5389), getActiveItems (:6423) and loadExerciseVideo (:6720)
+do not reauthorize the stored reference. Offline lookup (:6214) prefers a blob
+without a lease check; :6184 downloads external_url based on offline_allowed.
 
-YouTube IDs/public embeds are not an enforceable private-media licensing boundary;
-do not scrape/download them or claim RLS makes public YouTube videos private.
-Preserve the established native player; entitlement gates belong before existing
-media loading functions. Offline revocation cannot immediately reach a disconnected
-device: define a bounded offline lease and documented maximum exposure, distinguish
-personal devices from licensed classroom use, and assess clock rollback/device
-storage risks. Browser blobs are not DRM.
+Follow-up: centralize effective grants, require protected delivery authorization
+before the existing player load calls, cover intros and exercise changes, preserve
+circuit notes/references on denial, and bind offline grants to account/asset/license
+with bounded expiry. Never change native player geometry/protocol to enforce rights.
+The new RLS is not sufficient for embedded public URLs, already cached records,
+public YouTube videos or disconnected devices. Client cancellation labels also
+still differ from the proposed paid-through rule.
 
-Future rights must distinguish subject (person/organization), provider/content,
-use (personal/instruction/display), territory if required, term, seats, authorized
-devices/locations, and offline permission. Personal subscription does not confer
-instructor or studio rights. A provider editor role is not a commercial exhibition
-license. Independent provider grants compose per asset; canonical equivalence never
-transfers ownership. Instructor/studio/enterprise rights need organization/seat/
-location enforcement and contracts, not a reused personal-entitlement boolean.
-No tiers, billing integrations, or payment processing are implemented here.
+## Licensing and delivery boundaries
 
-## Rollout, compatibility, and rollback
+Separate person/provider subscriptions from instructor, studio and enterprise rights.
+Future licenses need subject/organization, provider/content, personal vs instructional
+use, term, seats, devices/locations and offline rights. A provider editing role or
+canonical exercise match never transfers content ownership or exhibition rights.
+No payment processing or tier implementation was added.
 
-Use the exact validation protocol in verification/README.md before considering
-implementation. Expired/free-sample access will tighten intentionally. Null legacy
-dates, unlimited active grants, member analyst access, existing invites, helper
-permissions and client cancellation labels may change UX; review counts without
-sharing actual records. Apply related policy/RPC/expiry changes atomically only
-after isolated tests. Canary on staging with synthetic fixtures; monitor denials
-without recording sensitive media URLs or user payloads.
+Protect licensed origins with private/signed delivery and sanitized preview
+projections; preview rows must not carry master URLs/storage paths. Test copied
+URL expiry and token audience/resource limits. Browser blobs are not DRM and offline
+revocation cannot reach a disconnected device immediately. YouTube public embeds
+cannot become private merely through RLS. No live media URL was fetched here.
 
-Before a future rollout, capture reviewed schema-only definitions, ACLs, policy
-names, and function bodies plus a privately retained backup/restore point. Use one
-transaction for the final migration and fail on unexpected catalog fingerprints.
-On failure, rollback that transaction. After commit, restore exact previous
-definitions/grants from the verified snapshot through a reviewed compensating
-migration; do not disable RLS or grant broad access. Reopening the preview flaw is
-not a safe default rollback: pause protected delivery while investigating. Retain
-expires_at data rather than dropping it immediately. No rollback is needed now:
-no database changes have occurred.
+## Results, limits and rollback
 
-## Current test results and limits
+See test-results/local-run.json and verification/README.md. Actual SQL roles are
+anon/authenticated with no bypass privileges; PostgREST validates runtime-signed
+synthetic claims and switches roles. Setup uses postgres; assertions do not claim
+admin queries prove RLS. Baseline and corrected decisions, team/onboarding flows,
+private data, parallel acceptance/revocation and transaction rollback were tested.
 
-`npm test`: 58 passing Node tests (45 existing + 13 new client/readiness checks),
-also passed using Node 22.11.0 to match CI, in addition to Node 24.22.1.
-The new tests execute extracted production provider functions, including negative
-cross-provider capabilities and user_metadata escalation cases. They are not RLS
-tests. `npm run test:security:preflight` deliberately exits 2, reporting missing
-schema evidence and **no database tests run**. No anon/authenticated database-role,
-RPC atomicity, URL-origin, or SQL migration execution result is claimed.
+A full Supabase image could not unpack within this Docker environment's storage
+limit. The passing environment uses pinned PostgreSQL 15.15 + PostgREST 12.2.3, exact
+public catalog reconstruction and explicit upstream auth claim-reader adapters.
+It does NOT run GoTrue or reproduce unexported Auth/Storage schemas/settings. This
+is meaningful public-schema authorization evidence, not production certification.
 
-References consulted: Supabase RLS and database-function documentation and current
-changelog. PUBLIC function grants, SECURITY DEFINER search_path, exposed views, and
-ownership/WITH CHECK require review. No live connection was used.
+Before deployment: verify hosted engine/version, full schema fingerprints, schema
+ACLs/sequence ACLs/default privileges/API exposure, current preview/date data,
+confirmation/session rules, signed-origin behavior and full application/native
+regressions. Retest on production-equivalent isolated infrastructure with Auth.
+Product approval of tightened semantics and explicit deployment authorization are
+still required. Verified evidence files must never be executed as deployment DDL.
+
+The local harness rehearses all changes inside BEGIN/ROLLBACK, verifies restoration
+of baseline behavior, then applies them atomically for positive/negative tests.
+A future pre-commit deployment failure must rollback the whole transaction. After
+commit prefer a reviewed forward fix or pause protected delivery; blindly restoring
+the old NULL guard/paid-preview leak is unsafe. Preserve expiry data. Capture exact
+unsanitized definitions/grants in the owner's private rollback process, never in
+this repository. No production rollback or deployment occurred in this PR.

@@ -1,132 +1,128 @@
-# Required isolated-database verification
+# Isolated authorization verification
 
-No faithful database test can run from this repository yet. The schema, policies,
-RPC implementations and delivery controls are absent. This is a required validation
-plan, not a test report. The current readiness command fails with exit 2 on purpose.
-Never interpret the 58 passing Node tests as proof of database authorization.
+## Actual results
 
-## 1. Obtain evidence without using live access from this assignment
+| Check | Result |
+|---|---|
+| Reconstructed public-schema SQL-role and PostgREST suite | 134 assertions passed, 0 failed, on Node 24.22.1 and again on Node 22.11.0 |
+| Existing and added Node suite | 60 tests passed, 0 failed/skipped, on Node 24.22.1 and Node 22.11.0 |
+| Recorded evidence/SQL/harness fingerprints | Preflight passed for the committed local-run report; it explicitly does not rerun tests |
+| Full Supabase Auth/Storage and hosted-version equivalence | Blocked; missing configuration/full platform schema and full image storage limitation |
+| External-origin/private media, offline leases, iOS device behavior | Not tested; no live origin or native deployment used |
 
-Have the project owner provide schema-only exports from their existing approved
-audit process. Do not run these against the live project as part of this PR.
+The final recorded database report is from Node 22.11.0 and PostgreSQL 15.15.
 
-- `security/verified-schema/schema.sql`: exact table, enum/domain, constraint,
-  index, FK, view, trigger and sequence DDL for all affected relations/dependencies.
-- `policies-and-grants.sql`: all policy definitions (including ALL policies), role
-  ACLs, schema/table/sequence grants, default privileges and exposed-schema list.
-- `function-definitions.sql`: every affected function overload, body, owner,
-  SECURITY DEFINER flag, configuration/search_path, EXECUTE ACL and dependencies.
-- `storage-and-api-boundaries.md`: reviewed nonsecret description of storage bucket
-  privacy, origin access, signed URL/token settings, exposed views/schemas, accepted
-  auth identities, and Edge Function permission boundaries.
+## Reproduce locally
 
-Use schema-only `pg_dump --schema-only` with relevant schemas/dependencies and the
-catalog queries in inventory.sql within the owner's approved process. No auth.users
-rows, actual invitations/entitlements, media URLs, JWTs, service keys, dumps of user
-data, or function-embedded credentials should be committed. Inspect/redact exports
-before sharing. Do not invent redacted function bodies; mark them unavailable.
+Prerequisites: Node 22+, Docker with image access and room for the two pinned small
+images. No npm dependency install, psql host install, Supabase credentials or cloud
+project connection is required.
 
-Review enum values, null/date types, duplicate entitlement rules, provider statuses,
-preview asset mapping and current helper dependency graph. Get product approval for
-the date/cancellation and seven-day-invitation rules in ../README.md. Until then the
-SQL proposals stay blocked and outside automatic migration discovery.
-
-## 2. Build a faithful local harness in a follow-up reviewed change
-
-1. Pin the local Supabase/Postgres versions to the verified hosted engine; use a
-   disposable local Supabase stack with auth.uid/auth.jwt and real anon/authenticated
-   roles. If using plain Postgres, explicitly list any auth stand-ins and resulting
-   limits. An invented auth implementation is not full Supabase verification.
-2. Load reviewed DDL/policies/functions without production data. Create synthetic
-   users A/B, owner/editor/admin/analyst, platform admin, two independent providers,
-   a private provider, a suspended provider, preview+paid+offline assets, and private
-   circuits for both users. Create fixtures through the actual schema constraints.
-3. Save fixture identities/resource IDs in a local manifest; no real records or
-   credentials. Never use service_role to make the access assertions.
-4. Prove the OLD policies reproduce the supplied broad-preview and expired-status
-   failures before applying corrections. If not reproduced, stop and resolve drift.
-5. Replace the draft placeholders with reviewed signatures/types/predicates, include
-   verified accept/create/resend RPC replacements, establish grants and policies,
-   and generate the final migrations with the installed CLI's documented workflow.
-6. Apply ONLY to this disposable stack. Run actual-role tests below. Use clean
-   connections per identity, transactions, ON_ERROR_STOP, nonzero exits for any
-   unexpected result. Check current_user and rolbypassrls before assertions.
-7. Also use the local Auth/API path with synthetic login identities to exercise JWT
-   claim handling, RPC exposure and views. SQL SET ROLE does not prove API behavior.
-8. Test rollback using the exact pre-change schema snapshot; rerun fixtures. Destroy
-   only the task's disposable environment after collecting nonsecret results.
-
-No fixture-seeding SQL is supplied now because keys, constraints, enum types and RPC
-bodies are missing. The offline preflight remains blocked until that harness is
-implemented and reviewed; file presence alone must not produce a green result.
-
-## 3. Exact actual-role assertion pattern
-
-On the LOCAL database only, as a test setup role with SET ROLE privileges:
-
-```sql
-BEGIN;
-SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims',
-  '{"sub":"00000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{}}', true);
-SELECT current_user = 'authenticated'
-  AND NOT (SELECT rolbypassrls FROM pg_roles WHERE rolname = current_user)
-  AND auth.uid() = '00000000-0000-4000-8000-000000000001'::uuid AS identity_ok \gset
-\if :identity_ok
-\else
-  \quit 1
-\endif
--- paid_asset_id must be supplied from the verified synthetic fixture manifest.
-SELECT count(*) = 0 AS denied
-FROM public.provider_media_assets WHERE id::text = :'paid_asset_id' \gset
-\if :denied
-\else
-  \quit 1
-\endif
-ROLLBACK;
+```sh
+npm run test:security:database
+npm run test:security:preflight
+npm test
 ```
 
-This is an assertion pattern, not a runnable full test: the synthetic identity and
-paid asset must exist in verified fixtures. For anon, use `SET LOCAL ROLE anon`, an
-empty claims object, assert auth.uid() IS NULL, and test discovery plus raw-table
-denial. PostgreSQL SELECT denial may mean zero rows or a deliberate insufficient-
-privilege error depending on the reviewed grant contract; assert the chosen one,
-not either indiscriminately. Mutation/RPC rejection must assert the intended SQLSTATE
-and verify no membership/entitlement/invite rows changed. Use a separate observer
-connection only to inspect final effects, never to substitute for caller tests.
+The runner accepts no database URL/project argument. It creates uniquely named,
+internal-only Docker networking, a disposable PostgreSQL container and PostgREST
+container with no published ports or host mounts, loads the catalog and synthetic
+fixtures, performs assertions, writes a nonsecret JSON report and removes only its
+containers/volumes/network in finally. It bypasses HTTP proxy routing for the local
+API. Runtime JWT signing material is random and never written to the report or
+source. Do not substitute real identities or credentials.
 
-## 4. Required positive and negative cases
+The database image is PostgreSQL 15.15-alpine and the API image PostgREST 12.2.3;
+both are digest-pinned in the runner/report. Full Supabase image extraction failed
+with a Docker-layer storage error here; no full GoTrue stack is claimed.
 
-| Area | Inputs and exact required outcome |
-|---|---|
-| Preview | Free authenticated A: discoverable + samples on + preview_allowed true + approved preview asset => only preview row; same provider paid row hidden |
-| Preview negatives | Flip each flag independently, private/suspended provider, null preview flag, or source-video URL on a purported preview => deny; provider sample toggle never exposes all rows |
-| Anon | Published sanitized discovery/preview only; raw protected media and all privileged mutation RPCs deny; test helpers needed by discovery still function |
-| Dates | For active/trialing/canceled: start in past and future end => allow; future start, end=now, past end, null start, null end, inverted/equal window => deny |
-| Complimentary | Valid start + null end => allow; future start or finite expired end => deny |
-| Cancellation | canceled_at in past with valid finite paid-through end => allow until end; terminal denied status => deny regardless of future end |
-| Status | expired/past_due/unknown => deny; verify actual enum representation, no new invented enum value |
-| Isolation | Subscriber A entitled only to P1 cannot read P2; subscription does not allow asset UPDATE/DELETE or entitlement INSERT/UPDATE/DELETE |
-| Roles | Editor media/storefront own provider allowed, foreign provider denied; admin analytics/team view allowed but owner-only team mutation denied; owner team actions scoped to own provider |
-| Platform | Trusted app_metadata admin follows reviewed platform capabilities; user_metadata admin cannot escalate; private subscriber circuits remain isolated |
-| RPCs | Each overload tested under anon/free/subscriber/editor/admin/owner/platform identities; changing supplied provider/user IDs cannot cross tenants; caller-supplied admin/user ID never trusted |
-| Invites | Pending correctly addressed confirmed recipient before expiry succeeds once; expired at boundary, revoked, accepted replay, wrong-address, unconfirmed, nonexistent, anonymous => fail with no membership side effects |
-| Concurrency | Two accepts race => one success, one rejection; accept vs revoke serializes; owner demotion/removal impossible; duplicate email/member rules match verified constraints |
-| Legacy invites | created_at older than seven days stays expired after backfill; resend does not extend expiry; null creation dates block migration for explicit remediation |
-| Private circuits | A cannot read/write B's circuit/settings/favorites/history; reassignment of user_id or provider_id through UPDATE denied (USING + WITH CHECK) |
-| Delivery | Copy protected URL then expire/revoke grant: old URL stops within documented token TTL; preview never reveals master URL; public YouTube cannot be claimed private |
-| Offline | Expiry, account switch, provider revocation, reconnect, device clock rollback and lease boundaries follow reviewed policy; disconnected revocation limitation is explicit |
-| Client paths | Expire entitlement after save/cache/program load; every protected intro/exercise denies delivery without losing circuit/notes; native video geometry and controls unchanged |
+## Reconstruction fidelity
 
-Repeat with RLS enabled and catalog assertions, but do not count those assertions
-as behavioral proof. Test views with their actual security_invoker behavior and
-functions under their actual owners. Exercise all existing onboarding/invitation/
-role-management workflows after EXECUTE changes. Run local security advisors.
+`security/local/catalog-loader.mjs` uses catalog.json directly, with no simplified
+replacement policies/RPCs. It creates all 18 public tables, all 66 constraints (keys
+before foreign keys), 43 indexes, 39 policies, all 11 complete function definitions,
+recorded function owners/EXECUTE grants and table ACLs, and enables the observed RLS.
+No triggers are invented (the snapshot has zero). Relevant postgres/public default
+privileges are reproduced. Unrelated platform-schema default grants are not replayed.
 
-## 5. Before production authorization
+`auth-adapter.sql` is LOCAL ONLY. It supplies the missing auth.users identity key,
+non-bypass anon/authenticated roles, an authenticator role for PostgREST, and upstream
+Supabase auth.uid/auth.jwt claim-reader bodies, linked to their source revision in
+that file. It is not a reconstruction of all auth.users columns, GoTrue signup,
+confirmation, MFA, session revocation, anonymous-auth identities, or Storage. The
+snapshot did not include those. The synthetic admin policy UUID stays in the fixture
+reconstruction only, never in reviewed SQL changes.
 
-Attach the schema fingerprint, resolved final migration diff, actual-role/API test
-results, old-vs-new reproductions, concurrency evidence, URL-delivery results, rollback
-rehearsal and native regression results. Require independent review of policies,
-SECURITY DEFINER bodies and grants, product sign-off on semantics, and a new explicit
-authorization before any live changes. This PR does not supply that authorization.
+Baseline policies are loaded without security fixes. SQL assertions start a fresh
+transaction, SET LOCAL ROLE to anon/authenticated, set synthetic claim context, and
+rollback. Each persona is checked for actual requesting role and no BYPASSRLS.
+Mutation observations through postgres are only setup/final-state inspection, not
+substitutes for caller assertions. Parallel invitation checks use separate caller
+connections; a short post-accept sleep holds the row lock to exercise contention.
+
+PostgREST uses the NOINHERIT authenticator, actual role switching and validated
+runtime-signed synthetic JWTs. Baseline paid-preview exposure is reproduced through
+its REST endpoint; corrected media/privileged-RPC behavior is then tested. This is
+actual local API enforcement, not an administrative SQL-session-only result.
+No real token is committed and no public or protected media URL is fetched.
+
+## Changes tested
+
+All four reviewed SQL fragments are first applied in a single transaction then
+rolled back; restoration of baseline preview/helper/expiry behavior is asserted.
+They are then applied in one transaction and committed only in this disposable DB.
+The harness fails on any unexpected result or SQL error. Original RLS expressions,
+constraints, grants and function bodies are preserved in the supplied evidence;
+no new sanitized export replaces them.
+
+See `security/test-results/local-run.json` for every assertion and exact input
+fingerprints. The preflight checks those fingerprints and reports **recorded**
+results without rerunning Docker. Editing SQL/evidence/harness invalidates the
+report. To refresh it, rerun the full database command, not a report-editing script.
+Passing `npm test` is not alone evidence that the database command was rerun.
+
+Coverage includes old-policy preview/date/orphan/inactive exposure, NULL guard RPC
+exploitation, role grants, private circuits, date boundary/status matrix, invitation
+expiry and original replay/email/member controls, owner/admin/editor boundaries,
+atomic onboarding owner creation, parallel accept/accept and accept/revoke outcomes,
+and REST positive/negative media and privileged operations. Synthetic URLs use the
+reserved .invalid domain; tests never exercise an external origin.
+
+## Production-equivalence checks still blocked
+
+These local results do not remove the following requirements:
+
+1. Verify actual hosted Postgres/PostgREST/Auth versions, extensions and complete
+   schema/sequence/schema-role ACLs, including exposed schemas, creator-role default
+   privileges and Auth/Storage dependencies. Repeat on a production-equivalent
+   disposable Supabase stack with actual Auth migrations/service.
+2. Verify signed-in/confirmed email guarantees, JWT refresh and revocation behavior,
+   anonymous-auth policy, role changes and forged/unverified claims using that Auth
+   service. Our adapter intentionally cannot establish these.
+3. Inventory legacy entitlement dates and preview flags privately. Active/trialing
+   null ends will now deny; historical preview_allowed defaults true cannot prove
+   approval. Obtain product approval for cancellation, comped, analyst and orphan
+   media semantics. Do not backfill guessed dates or admin identities.
+4. Review existing provider_entitlements SELECT visibility: it currently permits any
+   provider member to see subscriber rows (including billing references). A narrower
+   projection/capability may be required; this PR preserves it pending workflow/data
+   review. Likewise default privileges for future objects need ongoing governance.
+5. Validate Stream/CDN origin ACLs/tokens and external_url/storage_path handling,
+   explicit preview redaction, copied-URL expiry and offline leases. Zero Storage
+   buckets/objects does not establish external video privacy. YouTube public embeds
+   cannot be made private by these policies.
+6. Apply on staging with synthetic traffic; test account changes, program intros,
+   saved/cached/offline circuits and expiry. Current client does not implement the
+   date/access model; already disclosed URLs/cache can bypass row denial.
+7. Run existing app tests and native simulator/device regressions before a future
+   release. Native source/build baseline tests pass here; no iOS compilation or
+   device certification is made by these database tests.
+8. Privately snapshot exact pre-change schema/ACLs; verify no sanitized admin value
+   occurs in any intended deployment artifact. Combine reviewed SQL atomically,
+   fingerprint expected schema before application, plan denial monitoring, and
+   rehearse failure/forward-fix procedures. Obtain a new explicit authorization
+   before touching the live project. Do not restore the NULL-guard bug as a rollback.
+
+The evidence README remains historical and immutable. Its original instruction to
+block until actual-role RLS/API tests run has been satisfied for this reconstructed
+local scope only; production-equivalent certification remains blocked as above.
