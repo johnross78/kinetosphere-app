@@ -1,0 +1,7 @@
+{
+  "baselineCommit": "2d0185f50d2b0b6cb0e14ffb89efa031732ef64b",
+  "controllerFragmentSha256": "896ba67cd83383f33b24867cde7c2dde4e9df111561c301ee969a10575bdc90a",
+  "generatedIndexSha256": "1209f25a08464931748f517a483d8578564bd1543adb8888cf5b64c34217dfe0",
+  "activate-native-circuit-bridge.mjs": "f11d662918cb671eeff0c71b9f9b789309a2a95bf3c2d324d8299fb9a5e19e5a",
+  "apply-step10-player-refinements.mjs": "9679b8c178f779ec233b213523d1cf90678a02fd5e7d48dd48a33979f55a71cb"
+}

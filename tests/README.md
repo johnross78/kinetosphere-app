@@ -1,5 +1,9 @@
 # Prescription and timer characterization
 
+`npm test` also runs the native build-preservation checks described in
+[`docs/ios-build-process.md`](../docs/ios-build-process.md). Those checks use only
+Node built-ins and do not require dependencies or Xcode to be installed.
+
 Run `npm test` from the repository root using Node.js 22 or newer. No dependency
 installation is required. The command uses Node's built-in test runner, assertions,
 filesystem API, and VM.
