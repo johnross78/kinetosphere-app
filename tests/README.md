@@ -1,5 +1,9 @@
 # Prescription and timer characterization
 
+Provider-access characterization and the blocked database-validation plan are
+documented in [`security/README.md`](../security/README.md). Passing client tests
+do not establish database authorization security.
+
 `npm test` also runs the native build-preservation checks described in
 [`docs/ios-build-process.md`](../docs/ios-build-process.md). Those checks use only
 Node built-ins and do not require dependencies or Xcode to be installed.
