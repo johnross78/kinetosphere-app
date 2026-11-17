@@ -4,6 +4,7 @@
   "private": true,
   "description": "Kinetosphere Step 9 native sync candidate: includes tested Step 8.4 web app; pending device validation.",
   "scripts": {
+    "test": "node --test tests/*.test.mjs",
     "cap:sync": "npx cap sync",
     "cap:add:ios": "npx cap add ios",
     "cap:open:ios": "npx cap open ios",
